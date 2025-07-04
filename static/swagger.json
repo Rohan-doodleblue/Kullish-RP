@@ -473,6 +473,280 @@
           }
         }
       }
+    },
+    "/api/curriculum/generate-lesson-plan": {
+      "post": {
+        "summary": "Generate Lesson Plan",
+        "description": "Generate a comprehensive lesson plan with learning objectives, activities, and assessment strategies",
+        "tags": ["Curriculum Assistant"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonPlanRequest"
+              },
+              "example": {
+                "subject": "Mathematics",
+                "topic": "Linear Equations",
+                "grade_level": "8th grade",
+                "duration": "45 minutes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lesson plan generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonPlanResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/map-standards": {
+      "post": {
+        "summary": "Map Curriculum Standards",
+        "description": "Map curriculum standards for a specific topic and grade level",
+        "tags": ["Curriculum Assistant"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardsMappingRequest"
+              },
+              "example": {
+                "subject": "Science",
+                "topic": "Photosynthesis",
+                "grade_level": "7th grade"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Standards mapped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardsMappingResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/curate-resources": {
+      "post": {
+        "summary": "Curate Educational Resources",
+        "description": "Curate educational resources for a specific topic and grade level",
+        "tags": ["Curriculum Assistant"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceCurationRequest"
+              },
+              "example": {
+                "subject": "English Literature",
+                "topic": "Shakespeare",
+                "grade_level": "9th grade",
+                "resource_types": ["videos", "articles", "interactive"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resources curated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceCurationResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/cross-curricular-unit": {
+      "post": {
+        "summary": "Create Cross-Curricular Unit",
+        "description": "Create a cross-curricular unit integrating multiple subjects around a central theme",
+        "tags": ["Curriculum Assistant"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossCurricularRequest"
+              },
+              "example": {
+                "subjects": ["Mathematics", "Science", "Social Studies"],
+                "central_theme": "Environmental Sustainability",
+                "grade_level": "8th grade"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cross-curricular unit created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrossCurricularResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/complete-package": {
+      "post": {
+        "summary": "Create Complete Curriculum Package",
+        "description": "Create a complete curriculum package with lesson plan, standards mapping, and resources",
+        "tags": ["Curriculum Assistant"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletePackageRequest"
+              },
+              "example": {
+                "subject": "Mathematics",
+                "topic": "Algebra",
+                "grade_level": "8th grade",
+                "duration": "45 minutes",
+                "include_resources": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complete curriculum package created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletePackageResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -848,6 +1122,461 @@
             "$ref": "#/components/schemas/TokenUsageResponse"
           }
         }
+      },
+      "LessonPlanRequest": {
+        "type": "object",
+        "required": ["subject", "topic", "grade_level", "duration"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area",
+            "example": "Mathematics"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic within the subject",
+            "example": "Linear Equations"
+          },
+          "grade_level": {
+            "type": "string",
+            "description": "The grade level",
+            "example": "8th grade"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Duration of the lesson (e.g., '45 minutes', '2 hours', '3 days', '1 week', '2 months')",
+            "example": "45 minutes"
+          }
+        }
+      },
+      "LessonPlanResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "lesson_plan": {
+            "type": "object",
+            "properties": {
+              "lesson_title": {"type": "string"},
+              "learning_objectives": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "curriculum_standards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "standard_code": {"type": "string"},
+                    "description": {"type": "string"},
+                    "subject": {"type": "string"}
+                  }
+                }
+              },
+              "materials_needed": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "lesson_structure": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "phase": {"type": "string"},
+                    "duration": {"type": "string"},
+                    "activities": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "teacher_notes": {"type": "string"}
+                  }
+                }
+              },
+              "assessment_strategies": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "differentiation_strategies": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "cross_curricular_connections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subject": {"type": "string"},
+                    "connection": {"type": "string"}
+                  }
+                }
+              },
+              "estimated_prep_time": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "StandardsMappingRequest": {
+        "type": "object",
+        "required": ["subject", "topic", "grade_level"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area",
+            "example": "Science"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic",
+            "example": "Photosynthesis"
+          },
+          "grade_level": {
+            "type": "string",
+            "description": "The grade level",
+            "example": "7th grade"
+          }
+        }
+      },
+      "StandardsMappingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "standards_map": {
+            "type": "object",
+            "properties": {
+              "subject": {"type": "string"},
+              "topic": {"type": "string"},
+              "grade_level": {"type": "string"},
+              "standards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "standard_code": {"type": "string"},
+                    "standard_title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "proficiency_levels": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "assessment_criteria": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  }
+                }
+              },
+              "learning_progression": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "prerequisite_skills": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "current_skills": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "next_skills": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  }
+                }
+              },
+              "cross_references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "related_subject": {"type": "string"},
+                    "related_topic": {"type": "string"},
+                    "connection": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "ResourceCurationRequest": {
+        "type": "object",
+        "required": ["subject", "topic", "grade_level"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area",
+            "example": "English Literature"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic",
+            "example": "Shakespeare"
+          },
+          "grade_level": {
+            "type": "string",
+            "description": "The grade level",
+            "example": "9th grade"
+          },
+          "resource_types": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Types of resources to curate",
+            "default": ["videos", "articles", "interactive", "worksheets"],
+            "example": ["videos", "articles", "interactive"]
+          }
+        }
+      },
+      "ResourceCurationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "resources": {
+            "type": "object",
+            "properties": {
+              "subject": {"type": "string"},
+              "topic": {"type": "string"},
+              "grade_level": {"type": "string"},
+              "curated_resources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {"type": "string"},
+                    "type": {"type": "string"},
+                    "url": {"type": "string"},
+                    "description": {"type": "string"},
+                    "grade_appropriateness": {"type": "string"},
+                    "learning_objectives": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "engagement_level": {"type": "string"},
+                    "accessibility_features": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "estimated_duration": {"type": "string"}
+                  }
+                }
+              },
+              "resource_categories": {
+                "type": "object",
+                "properties": {
+                  "primary_resources": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "supplementary_materials": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "assessment_tools": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "extension_activities": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  }
+                }
+              },
+              "curation_notes": {"type": "string"},
+              "last_updated": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "CrossCurricularRequest": {
+        "type": "object",
+        "required": ["subjects", "central_theme", "grade_level"],
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of subjects to integrate",
+            "example": ["Mathematics", "Science", "Social Studies"]
+          },
+          "central_theme": {
+            "type": "string",
+            "description": "Central theme for the unit",
+            "example": "Environmental Sustainability"
+          },
+          "grade_level": {
+            "type": "string",
+            "description": "The grade level",
+            "example": "8th grade"
+          }
+        }
+      },
+      "CrossCurricularResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "unit_plan": {
+            "type": "object",
+            "properties": {
+              "unit_title": {"type": "string"},
+              "central_theme": {"type": "string"},
+              "subjects": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "grade_level": {"type": "string"},
+              "unit_overview": {"type": "string"},
+              "essential_questions": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "subject_integrations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subject": {"type": "string"},
+                    "lesson_focus": {"type": "string"},
+                    "key_concepts": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "activities": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    },
+                    "assessment": {"type": "string"}
+                  }
+                }
+              },
+              "project_based_learning": {
+                "type": "object",
+                "properties": {
+                  "project_title": {"type": "string"},
+                  "project_description": {"type": "string"},
+                  "learning_outcomes": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "timeline": {"type": "string"},
+                  "materials_needed": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                  },
+                  "assessment_rubric": {
+                    "type": "object",
+                    "properties": {
+                      "criteria": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "scoring": {"type": "string"}
+                    }
+                  }
+                }
+              },
+              "weekly_schedule": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "week": {"type": "integer"},
+                    "focus": {"type": "string"},
+                    "activities": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  }
+                }
+              },
+              "assessment_strategies": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "estimated_duration": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "CompletePackageRequest": {
+        "type": "object",
+        "required": ["subject", "topic", "grade_level", "duration"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area",
+            "example": "Mathematics"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic",
+            "example": "Algebra"
+          },
+          "grade_level": {
+            "type": "string",
+            "description": "The grade level",
+            "example": "8th grade"
+          },
+          "duration": {
+            "type": "string",
+            "description": "Duration of the lesson (e.g., '45 minutes', '2 hours', '3 days', '1 week', '2 months')",
+            "example": "45 minutes"
+          },
+          "include_resources": {
+            "type": "boolean",
+            "description": "Whether to include resource curation",
+            "default": true,
+            "example": true
+          }
+        }
+      },
+      "CompletePackageResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "curriculum_package": {
+            "type": "object",
+            "properties": {
+              "lesson_plan": {
+                "$ref": "#/components/schemas/LessonPlanResponse"
+              },
+              "standards_map": {
+                "$ref": "#/components/schemas/StandardsMappingResponse"
+              },
+              "resources": {
+                "$ref": "#/components/schemas/ResourceCurationResponse"
+              },
+              "metadata": {
+                "$ref": "#/components/schemas/GenerationMetadata"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -863,6 +1592,10 @@
     {
       "name": "Assessment Grading",
       "description": "Endpoints for grading assessments and providing feedback"
+    },
+    {
+      "name": "Curriculum Assistant",
+      "description": "Endpoints for lesson planning, standards mapping, and resource curation"
     }
   ]
 } 

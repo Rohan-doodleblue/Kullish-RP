@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assessment & Curriculum API - Test Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: white;
+            color: black;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            color: black;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: black;
+        }
+
+        .nav-tab.active {
+            background: #f0f0f0;
+            border-bottom: 2px solid black;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: #f0f0f0;
+            color: black;
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #e0e0e0;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ccc;
+        }
+
+        .result-container h3 {
+            color: black;
+            margin-bottom: 10px;
+        }
+
+        .result-json {
+            background: white;
+            color: black;
+            padding: 15px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: black;
+        }
+
+        .error {
+            background: #f9f9f9;
+            color: red;
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        .token-usage {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        .question-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .option {
+            padding: 8px;
+            background: #f9f9f9;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .option label {
+            cursor: pointer;
+            display: inline-block;
+            width: calc(100% - 20px);
+        }
+
+        .correct-answer {
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Assessment & Curriculum API</h1>
+            <p>Test Interface for Automated Assessment and Curriculum Generation</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('assessment')">Assessment</button>
+            <button class="nav-tab" onclick="showTab('grading')">Grading</button>
+            <button class="nav-tab" onclick="showTab('curriculum')">Curriculum</button>
+            <button class="nav-tab" onclick="showTab('usage')">Token Usage</button>
+        </div>
+
+        <!-- Assessment Tab -->
+        <div id="assessment" class="tab-content active">
+            <h2>Assessment Generation</h2>
+            
+            <div class="form-group">
+                <label for="assessment-subject">Subject:</label>
+                <input type="text" id="assessment-subject" value="Mathematics" placeholder="e.g., Mathematics, Science, History">
+            </div>
+
+            <div class="form-group">
+                <label for="assessment-topic">Topic:</label>
+                <input type="text" id="assessment-topic" value="Algebra" placeholder="e.g., Algebra, Photosynthesis, World War II">
+            </div>
+
+            <div class="form-group">
+                <label for="assessment-questions">Number of Questions:</label>
+                <input type="number" id="assessment-questions" value="5" min="1" max="20">
+            </div>
+
+            <button class="btn" onclick="generateMultipleChoice()">Generate Multiple Choice Questions</button>
+            <button class="btn" onclick="generateEssayPrompt()">Generate Essay Prompt</button>
+            <button class="btn" onclick="createCompleteAssessment()">Create Complete Assessment</button>
+
+            <div id="assessment-result"></div>
+        </div>
+
+        <!-- Grading Tab -->
+        <div id="grading" class="tab-content">
+            <h2>Assessment Grading</h2>
+            
+            <div class="form-group">
+                <label>Grading Type:</label>
+                <select id="grading-type" onchange="toggleGradingForm()">
+                    <option value="multiple-choice">Multiple Choice</option>
+                    <option value="essay">Essay</option>
+                </select>
+            </div>
+
+            <!-- Multiple Choice Grading -->
+            <div id="mc-grading-form">
+                <div class="form-group">
+                    <label>Questions (JSON format):</label>
+                    <textarea id="mc-questions" rows="10" placeholder='[{"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "correct_answer": "A", "explanation": "..."}]'></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Student Answers (comma-separated):</label>
+                    <input type="text" id="mc-answers" placeholder="A,B,C,D,A" value="A,B,C,D,A">
+                </div>
+
+                <button class="btn" onclick="gradeMultipleChoice()">Grade Multiple Choice</button>
+            </div>
+
+            <!-- Essay Grading -->
+            <div id="essay-grading-form" style="display: none;">
+                <div class="form-group">
+                    <label>Essay Prompt (JSON format):</label>
+                    <textarea id="essay-prompt" rows="8" placeholder='{"prompt": "...", "word_limit": 500, "rubric": {"content": "...", "organization": "...", "grammar": "...", "creativity": "..."}}'></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Student Essay:</label>
+                    <textarea id="student-essay" rows="10" placeholder="Write your essay here..."></textarea>
+                </div>
+
+                <button class="btn" onclick="gradeEssay()">Grade Essay</button>
+            </div>
+
+            <div id="grading-result"></div>
+        </div>
+
+        <!-- Curriculum Tab -->
+        <div id="curriculum" class="tab-content">
+            <h2>Curriculum Assistant</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="curriculum-subject">Subject:</label>
+                    <input type="text" id="curriculum-subject" value="Mathematics" placeholder="e.g., Mathematics, Science, History">
+                </div>
+
+                <div class="form-group">
+                    <label for="curriculum-topic">Topic:</label>
+                    <input type="text" id="curriculum-topic" value="Linear Equations" placeholder="e.g., Linear Equations, Photosynthesis, Ancient Rome">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="curriculum-grade">Grade Level:</label>
+                    <input type="text" id="curriculum-grade" value="8th grade" placeholder="e.g., 8th grade, 10th grade, K-5">
+                </div>
+
+                <div class="form-group">
+                    <label for="curriculum-duration">Duration:</label>
+                    <input type="text" id="curriculum-duration" value="45 minutes" placeholder="e.g., 45 minutes, 2 hours, 3 days">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Resource Types:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="videos" checked>
+                        <label for="videos">Videos</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="articles" checked>
+                        <label for="articles">Articles</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="interactive" checked>
+                        <label for="interactive">Interactive</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="worksheets" checked>
+                        <label for="worksheets">Worksheets</label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="generateLessonPlan()">Generate Lesson Plan</button>
+            <button class="btn" onclick="mapStandards()">Map Curriculum Standards</button>
+            <button class="btn" onclick="curateResources()">Curate Educational Resources</button>
+            <button class="btn" onclick="createCrossCurricularUnit()">Create Cross-Curricular Unit</button>
+            <button class="btn" onclick="createCompletePackage()">Create Complete Package</button>
+
+            <div id="curriculum-result"></div>
+        </div>
+
+        <!-- Token Usage Tab -->
+        <div id="usage" class="tab-content">
+            <h2>Token Usage Statistics</h2>
+            
+            <button class="btn" onclick="getTokenUsage()">Refresh Token Usage</button>
+            
+            <div id="usage-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001';
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+        }
+
+        function toggleGradingForm() {
+            const gradingType = document.getElementById('grading-type').value;
+            const mcForm = document.getElementById('mc-grading-form');
+            const essayForm = document.getElementById('essay-grading-form');
+            
+            if (gradingType === 'multiple-choice') {
+                mcForm.style.display = 'block';
+                essayForm.style.display = 'none';
+            } else {
+                mcForm.style.display = 'none';
+                essayForm.style.display = 'block';
+            }
+        }
+
+        function showLoading(containerId) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="loading">
+                    <p>Processing request...</p>
+                </div>
+            `;
+        }
+
+        function showResult(containerId, data, title = 'Result') {
+            const resultHtml = `
+                <div class="result-container">
+                    <h3>${title}</h3>
+                    <div class="result-json">${JSON.stringify(data, null, 2)}</div>
+                </div>
+            `;
+            document.getElementById(containerId).innerHTML = resultHtml;
+        }
+
+        function showError(containerId, error) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="error">
+                    <strong>Error:</strong> ${error}
+                </div>
+            `;
+        }
+
+        async function makeRequest(endpoint, data) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Request failed');
+                }
+                
+                return result;
+            } catch (error) {
+                throw new Error(`API request failed: ${error.message}`);
+            }
+        }
+
+        // Assessment Functions
+        async function generateMultipleChoice() {
+            const subject = document.getElementById('assessment-subject').value;
+            const topic = document.getElementById('assessment-topic').value;
+            const numQuestions = document.getElementById('assessment-questions').value;
+
+            showLoading('assessment-result');
+
+            try {
+                const result = await makeRequest('/api/generate/multiple-choice', {
+                    subject,
+                    topic,
+                    num_questions: parseInt(numQuestions)
+                });
+
+                // Store questions globally for grading
+                window.currentQuestions = result.questions;
+
+                // Create interactive MCQ form
+                const interactiveForm = `
+                    <div class="result-container">
+                        <h3>Interactive Multiple Choice Quiz</h3>
+                        <form id="mcq-form">
+                            ${result.questions.map((q, index) => `
+                                <div class="question-item">
+                                    <div class="question-text">${index + 1}. ${q.question}</div>
+                                    <div class="options">
+                                        ${Object.entries(q.options).map(([key, value]) => `
+                                            <div class="option">
+                                                <input type="radio" name="q${index}" value="${key}" id="q${index}_${key}">
+                                                <label for="q${index}_${key}">${key}. ${value}</label>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="feedback" id="feedback-${index}" style="display: none;"></div>
+                                </div>
+                            `).join('')}
+                            <button type="button" class="btn" onclick="submitMCQAnswers()">Submit Answers</button>
+                            <button type="button" class="btn" onclick="showMCQAnswers()">Show All Answers</button>
+                        </form>
+                    </div>
+                `;
+
+                document.getElementById('assessment-result').innerHTML = interactiveForm;
+            } catch (error) {
+                showError('assessment-result', error.message);
+            }
+        }
+
+        async function submitMCQAnswers() {
+            if (!window.currentQuestions) {
+                showError('assessment-result', 'No questions available. Please generate questions first.');
+                return;
+            }
+
+            const questions = window.currentQuestions;
+            const studentAnswers = [];
+
+            // Collect answers from form
+            for (let i = 0; i < questions.length; i++) {
+                const selectedAnswer = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selectedAnswer) {
+                    studentAnswers.push(selectedAnswer.value);
+                } else {
+                    studentAnswers.push(''); // No answer selected
+                }
+            }
+
+            // Check if all questions are answered
+            if (studentAnswers.includes('')) {
+                showError('assessment-result', 'Please answer all questions before submitting.');
+                return;
+            }
+
+            showLoading('assessment-result');
+
+            try {
+                console.log('Submitting answers:', { questions, studentAnswers });
+                
+                const result = await makeRequest('/api/grade/multiple-choice', {
+                    questions: questions,
+                    student_answers: studentAnswers
+                });
+
+                console.log('Received result:', result);
+
+                // Check if result has the expected structure
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid response from grading API');
+                }
+
+                // Display results with individual feedback
+                displayMCQResults(result.grading_result, questions, studentAnswers);
+            } catch (error) {
+                console.error('Error in submitMCQAnswers:', error);
+                showError('assessment-result', `Error grading answers: ${error.message}`);
+            }
+        }
+
+        function displayMCQResults(result, questions, studentAnswers) {
+            // Debug: Log the result structure
+            console.log('Grading result:', result);
+            
+            // Check if we have the expected structure
+            if (!result || !result.detailed_results) {
+                showError('assessment-result', 'Unexpected response format from grading API. Please try again.');
+                return;
+            }
+
+            const resultsHtml = `
+                <div class="result-container">
+                    <h3>Quiz Results</h3>
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border: 1px solid #ccc;">
+                        <h4>Overall Score: ${result.score_percentage || 0}% (${result.correct_answers || 0}/${result.total_questions || questions.length} correct)</h4>
+                        <p><strong>Grade:</strong> ${result.grade || 'N/A'}</p>
+                    </div>
+                    
+                    ${result.detailed_results.map((item, index) => {
+                        const question = questions[index];
+                        const isCorrect = item.is_correct;
+                        const userAnswer = item.student_answer;
+                        const correctAnswer = item.correct_answer;
+                        
+                        return `
+                            <div class="question-item" style="border-left: 4px solid ${isCorrect ? '#4caf50' : '#f44336'};">
+                                <div class="question-text">${index + 1}. ${question.question}</div>
+                                <div style="margin: 10px 0;">
+                                    <strong>Your Answer:</strong> ${userAnswer || 'No answer'} 
+                                    ${isCorrect ? '✓' : '✗'}
+                                </div>
+                                ${!isCorrect ? `<div style="margin: 10px 0;"><strong>Correct Answer:</strong> ${correctAnswer}</div>` : ''}
+                                <div style="margin: 10px 0;"><strong>Explanation:</strong> ${question.explanation}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    <button type="button" class="btn" onclick="generateMultipleChoice()">Generate New Quiz</button>
+                </div>
+            `;
+
+            document.getElementById('assessment-result').innerHTML = resultsHtml;
+        }
+
+        function showMCQAnswers() {
+            if (!window.currentQuestions) {
+                showError('assessment-result', 'No questions available.');
+                return;
+            }
+
+            const questions = window.currentQuestions;
+            const answersHtml = `
+                <div class="result-container">
+                    <h3>All Correct Answers</h3>
+                    ${questions.map((q, index) => `
+                        <div class="question-item">
+                            <div class="question-text">${index + 1}. ${q.question}</div>
+                            <div style="margin: 10px 0;"><strong>Correct Answer:</strong> ${q.correct_answer}</div>
+                            <div style="margin: 10px 0;"><strong>Explanation:</strong> ${q.explanation}</div>
+                        </div>
+                    `).join('')}
+                    <button type="button" class="btn" onclick="generateMultipleChoice()">Generate New Quiz</button>
+                </div>
+            `;
+
+            document.getElementById('assessment-result').innerHTML = answersHtml;
+        }
+
+        async function generateEssayPrompt() {
+            const subject = document.getElementById('assessment-subject').value;
+            const topic = document.getElementById('assessment-topic').value;
+
+            showLoading('assessment-result');
+
+            try {
+                const result = await makeRequest('/api/generate/essay-prompt', {
+                    subject,
+                    topic
+                });
+
+                showResult('assessment-result', result, 'Generated Essay Prompt');
+            } catch (error) {
+                showError('assessment-result', error.message);
+            }
+        }
+
+        async function createCompleteAssessment() {
+            const subject = document.getElementById('assessment-subject').value;
+            const topic = document.getElementById('assessment-topic').value;
+
+            showLoading('assessment-result');
+
+            try {
+                const result = await makeRequest('/api/assessment/complete', {
+                    subject,
+                    topic,
+                    type: 'multiple_choice'
+                });
+
+                showResult('assessment-result', result, 'Complete Assessment');
+            } catch (error) {
+                showError('assessment-result', error.message);
+            }
+        }
+
+        // Grading Functions
+        async function gradeMultipleChoice() {
+            const questionsText = document.getElementById('mc-questions').value;
+            const answersText = document.getElementById('mc-answers').value;
+
+            try {
+                const questions = JSON.parse(questionsText);
+                const studentAnswers = answersText.split(',').map(a => a.trim());
+
+                showLoading('grading-result');
+
+                const result = await makeRequest('/api/grade/multiple-choice', {
+                    questions,
+                    student_answers: studentAnswers
+                });
+
+                showResult('grading-result', result, 'Multiple Choice Grading Result');
+            } catch (error) {
+                showError('grading-result', error.message);
+            }
+        }
+
+        async function gradeEssay() {
+            const essayPromptText = document.getElementById('essay-prompt').value;
+            const studentEssay = document.getElementById('student-essay').value;
+
+            try {
+                const essayPrompt = JSON.parse(essayPromptText);
+
+                showLoading('grading-result');
+
+                const result = await makeRequest('/api/grade/essay', {
+                    essay_prompt: essayPrompt,
+                    student_essay: studentEssay
+                });
+
+                showResult('grading-result', result, 'Essay Grading Result');
+            } catch (error) {
+                showError('grading-result', error.message);
+            }
+        }
+
+        // Curriculum Functions
+        async function generateLessonPlan() {
+            const subject = document.getElementById('curriculum-subject').value;
+            const topic = document.getElementById('curriculum-topic').value;
+            const gradeLevel = document.getElementById('curriculum-grade').value;
+            const duration = document.getElementById('curriculum-duration').value;
+
+            showLoading('curriculum-result');
+
+            try {
+                const result = await makeRequest('/api/curriculum/generate-lesson-plan', {
+                    subject,
+                    topic,
+                    grade_level: gradeLevel,
+                    duration
+                });
+
+                showResult('curriculum-result', result, 'Generated Lesson Plan');
+            } catch (error) {
+                showError('curriculum-result', error.message);
+            }
+        }
+
+        async function mapStandards() {
+            const subject = document.getElementById('curriculum-subject').value;
+            const topic = document.getElementById('curriculum-topic').value;
+            const gradeLevel = document.getElementById('curriculum-grade').value;
+
+            showLoading('curriculum-result');
+
+            try {
+                const result = await makeRequest('/api/curriculum/map-standards', {
+                    subject,
+                    topic,
+                    grade_level: gradeLevel
+                });
+
+                showResult('curriculum-result', result, 'Curriculum Standards Mapping');
+            } catch (error) {
+                showError('curriculum-result', error.message);
+            }
+        }
+
+        async function curateResources() {
+            const subject = document.getElementById('curriculum-subject').value;
+            const topic = document.getElementById('curriculum-topic').value;
+            const gradeLevel = document.getElementById('curriculum-grade').value;
+            
+            const resourceTypes = [];
+            if (document.getElementById('videos').checked) resourceTypes.push('videos');
+            if (document.getElementById('articles').checked) resourceTypes.push('articles');
+            if (document.getElementById('interactive').checked) resourceTypes.push('interactive');
+            if (document.getElementById('worksheets').checked) resourceTypes.push('worksheets');
+
+            showLoading('curriculum-result');
+
+            try {
+                const result = await makeRequest('/api/curriculum/curate-resources', {
+                    subject,
+                    topic,
+                    grade_level: gradeLevel,
+                    resource_types: resourceTypes
+                });
+
+                showResult('curriculum-result', result, 'Curated Educational Resources');
+            } catch (error) {
+                showError('curriculum-result', error.message);
+            }
+        }
+
+        async function createCrossCurricularUnit() {
+            const subject = document.getElementById('curriculum-subject').value;
+            const topic = document.getElementById('curriculum-topic').value;
+            const gradeLevel = document.getElementById('curriculum-grade').value;
+
+            showLoading('curriculum-result');
+
+            try {
+                const result = await makeRequest('/api/curriculum/cross-curricular-unit', {
+                    subjects: [subject, 'Science', 'English'],
+                    central_theme: topic,
+                    grade_level: gradeLevel
+                });
+
+                showResult('curriculum-result', result, 'Cross-Curricular Unit Plan');
+            } catch (error) {
+                showError('curriculum-result', error.message);
+            }
+        }
+
+        async function createCompletePackage() {
+            const subject = document.getElementById('curriculum-subject').value;
+            const topic = document.getElementById('curriculum-topic').value;
+            const gradeLevel = document.getElementById('curriculum-grade').value;
+            const duration = document.getElementById('curriculum-duration').value;
+
+            showLoading('curriculum-result');
+
+            try {
+                const result = await makeRequest('/api/curriculum/complete-package', {
+                    subject,
+                    topic,
+                    grade_level: gradeLevel,
+                    duration,
+                    include_resources: true
+                });
+
+                showResult('curriculum-result', result, 'Complete Curriculum Package');
+            } catch (error) {
+                showError('curriculum-result', error.message);
+            }
+        }
+
+        // Token Usage Function
+        async function getTokenUsage() {
+            showLoading('usage-result');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/token-usage`);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Request failed');
+                }
+
+                document.getElementById('usage-result').innerHTML = `
+                    <div class="token-usage">
+                        <h3>Daily Token Usage</h3>
+                        <p><strong>Date:</strong> ${result.date}</p>
+                        <p><strong>Tokens Used:</strong> ${result.tokens_used.toLocaleString()}</p>
+                        <p><strong>Tokens Remaining:</strong> ${result.tokens_remaining.toLocaleString()}</p>
+                        <p><strong>Daily Limit:</strong> ${result.limit.toLocaleString()}</p>
+                        <div style="margin-top: 10px;">
+                            <div style="background: #e2e8f0; height: 20px; border-radius: 10px; overflow: hidden;">
+                                <div style="background: #4facfe; height: 100%; width: ${(result.tokens_used / result.limit) * 100}%; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                showError('usage-result', error.message);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            getTokenUsage();
+        });
+    </script>
+</body>
+</html> 

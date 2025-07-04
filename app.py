@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 import openai
@@ -642,6 +642,11 @@ class AssessmentGrader:
             return "F"
 
 # API Routes
+
+@app.route('/')
+def index():
+    """Serve the main UI interface"""
+    return render_template('index.html')
 
 @app.route('/static/swagger.json')
 def swagger_json():

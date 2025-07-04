@@ -1,0 +1,868 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Automated Assessment & Scoring API",
+    "description": "A Flask-based API that provides automated assessment generation and scoring using OpenAI GPT-3.5. This system reduces teacher workload by 50% in grading while providing consistent, unbiased scoring and instant feedback.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the API is running and healthy",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2024-01-15T10:30:00",
+                  "service": "Automated Assessment API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/token-usage": {
+      "get": {
+        "summary": "Get Token Usage",
+        "description": "Get current daily token usage statistics for OpenAI API",
+        "tags": ["System"],
+        "responses": {
+          "200": {
+            "description": "Token usage statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenUsageResponse"
+                },
+                "example": {
+                  "date": "2024-01-15",
+                  "tokens_used": 1250,
+                  "tokens_remaining": 23750,
+                  "limit": 25000
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/generate/multiple-choice": {
+      "post": {
+        "summary": "Generate Multiple Choice Questions",
+        "description": "Generate multiple choice questions using AI for a specific subject and topic",
+        "tags": ["Assessment Generation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MultipleChoiceGenerationRequest"
+              },
+              "example": {
+                "subject": "Mathematics",
+                "topic": "Algebra",
+                "num_questions": 5
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Questions generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleChoiceGenerationResponse"
+                },
+                "example": {
+                  "success": true,
+                  "questions": [
+                    {
+                      "question": "What is the solution to 2x + 5 = 13?",
+                      "options": {
+                        "A": "x = 4",
+                        "B": "x = 8",
+                        "C": "x = 3",
+                        "D": "x = 6"
+                      },
+                      "correct_answer": "A",
+                      "explanation": "Subtract 5 from both sides: 2x = 8, then divide by 2: x = 4"
+                    }
+                  ],
+                  "metadata": {
+                    "subject": "Mathematics",
+                    "topic": "Algebra",
+                    "num_questions": 5,
+                    "generated_at": "2024-01-15T10:30:00"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/generate/essay-prompt": {
+      "post": {
+        "summary": "Generate Essay Prompt",
+        "description": "Generate an essay prompt with rubric using AI for a specific subject and topic",
+        "tags": ["Assessment Generation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EssayPromptGenerationRequest"
+              },
+              "example": {
+                "subject": "English Literature",
+                "topic": "Shakespeare's Macbeth"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Essay prompt generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EssayPromptGenerationResponse"
+                },
+                "example": {
+                  "success": true,
+                  "essay_prompt": {
+                    "prompt": "Analyze the theme of ambition in Shakespeare's Macbeth...",
+                    "word_limit": 500,
+                    "rubric": {
+                      "content": "Analysis of theme and character development",
+                      "organization": "Clear structure with introduction, body, conclusion",
+                      "grammar": "Proper grammar, spelling, and punctuation",
+                      "creativity": "Original insights and interpretation"
+                    }
+                  },
+                  "metadata": {
+                    "subject": "English Literature",
+                    "topic": "Shakespeare's Macbeth",
+                    "generated_at": "2024-01-15T10:30:00"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/grade/multiple-choice": {
+      "post": {
+        "summary": "Grade Multiple Choice Questions",
+        "description": "Grade multiple choice questions and provide instant feedback",
+        "tags": ["Assessment Grading"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MultipleChoiceGradingRequest"
+              },
+              "example": {
+                "questions": [
+                  {
+                    "question": "What is 2 + 2?",
+                    "options": {
+                      "A": "3",
+                      "B": "4",
+                      "C": "5",
+                      "D": "6"
+                    },
+                    "correct_answer": "B",
+                    "explanation": "Basic addition: 2 + 2 = 4"
+                  }
+                ],
+                "student_answers": ["B"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Questions graded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipleChoiceGradingResponse"
+                },
+                "example": {
+                  "success": true,
+                  "grading_result": {
+                    "total_questions": 1,
+                    "correct_answers": 1,
+                    "score_percentage": 100.0,
+                    "detailed_results": [
+                      {
+                        "question_number": 1,
+                        "student_answer": "B",
+                        "correct_answer": "B",
+                        "is_correct": true,
+                        "explanation": "Basic addition: 2 + 2 = 4"
+                      }
+                    ],
+                    "grade": "A"
+                  },
+                  "metadata": {
+                    "graded_at": "2024-01-15T10:30:00",
+                    "total_questions": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - number of questions and answers don't match",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/grade/essay": {
+      "post": {
+        "summary": "Grade Essay",
+        "description": "Grade an essay using AI and provide detailed feedback",
+        "tags": ["Assessment Grading"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EssayGradingRequest"
+              },
+              "example": {
+                "essay_prompt": {
+                  "prompt": "Write about your favorite book and why you like it.",
+                  "word_limit": 200,
+                  "rubric": {
+                    "content": "Clear description of the book",
+                    "organization": "Well-structured response",
+                    "grammar": "Proper grammar and spelling",
+                    "creativity": "Original thoughts and insights"
+                  }
+                },
+                "student_essay": "My favorite book is Harry Potter and the Sorcerer Stone. I love this book because it takes me to a magical world where anything is possible."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Essay graded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EssayGradingResponse"
+                },
+                "example": {
+                  "success": true,
+                  "grading_result": {
+                    "overall_score": 85,
+                    "word_count": 45,
+                    "detailed_scores": {
+                      "content": {
+                        "score": 20,
+                        "max_score": 25,
+                        "feedback": "Good description of the book"
+                      },
+                      "organization": {
+                        "score": 18,
+                        "max_score": 25,
+                        "feedback": "Clear structure"
+                      },
+                      "grammar": {
+                        "score": 22,
+                        "max_score": 25,
+                        "feedback": "Excellent grammar"
+                      },
+                      "creativity": {
+                        "score": 20,
+                        "max_score": 25,
+                        "feedback": "Shows original thinking"
+                      }
+                    },
+                    "overall_feedback": "This is a well-written essay that demonstrates good understanding...",
+                    "grade": "B+"
+                  },
+                  "metadata": {
+                    "graded_at": "2024-01-15T10:30:00",
+                    "word_count": 45
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - student essay is empty",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assessment/complete": {
+      "post": {
+        "summary": "Create Complete Assessment",
+        "description": "Create a complete assessment with questions and grading capabilities",
+        "tags": ["Assessment Generation"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteAssessmentRequest"
+              },
+              "example": {
+                "subject": "Science",
+                "topic": "Photosynthesis",
+                "type": "multiple_choice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assessment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteAssessmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid assessment type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "healthy"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00"
+          },
+          "service": {
+            "type": "string",
+            "example": "Automated Assessment API"
+          }
+        }
+      },
+      "TokenUsageResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "tokens_used": {
+            "type": "integer",
+            "example": 1250
+          },
+          "tokens_remaining": {
+            "type": "integer",
+            "example": 23750
+          },
+          "limit": {
+            "type": "integer",
+            "example": 25000
+          }
+        }
+      },
+      "MultipleChoiceGenerationRequest": {
+        "type": "object",
+        "required": ["subject", "topic"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area (e.g., Mathematics, Science, English)",
+            "example": "Mathematics"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic within the subject",
+            "example": "Algebra"
+          },
+          "num_questions": {
+            "type": "integer",
+            "description": "Number of questions to generate",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 20,
+            "example": 5
+          }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "The question text"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "A": {"type": "string"},
+              "B": {"type": "string"},
+              "C": {"type": "string"},
+              "D": {"type": "string"}
+            }
+          },
+          "correct_answer": {
+            "type": "string",
+            "enum": ["A", "B", "C", "D"]
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Explanation of why the answer is correct"
+          }
+        }
+      },
+      "MultipleChoiceGenerationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "EssayPromptGenerationRequest": {
+        "type": "object",
+        "required": ["subject", "topic"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area",
+            "example": "English Literature"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic within the subject",
+            "example": "Shakespeare's Macbeth"
+          }
+        }
+      },
+      "EssayPrompt": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "The essay prompt text"
+          },
+          "word_limit": {
+            "type": "integer",
+            "description": "Maximum word count for the essay"
+          },
+          "rubric": {
+            "type": "object",
+            "properties": {
+              "content": {"type": "string"},
+              "organization": {"type": "string"},
+              "grammar": {"type": "string"},
+              "creativity": {"type": "string"}
+            }
+          }
+        }
+      },
+      "EssayPromptGenerationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "essay_prompt": {
+            "$ref": "#/components/schemas/EssayPrompt"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GenerationMetadata"
+          }
+        }
+      },
+      "MultipleChoiceGradingRequest": {
+        "type": "object",
+        "required": ["questions", "student_answers"],
+        "properties": {
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          },
+          "student_answers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["A", "B", "C", "D"]
+            },
+            "description": "Array of student answers (A, B, C, or D)"
+          }
+        }
+      },
+      "DetailedResult": {
+        "type": "object",
+        "properties": {
+          "question_number": {
+            "type": "integer",
+            "description": "Question number (1-based)"
+          },
+          "student_answer": {
+            "type": "string",
+            "enum": ["A", "B", "C", "D"]
+          },
+          "correct_answer": {
+            "type": "string",
+            "enum": ["A", "B", "C", "D"]
+          },
+          "is_correct": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        }
+      },
+      "MultipleChoiceGradingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "grading_result": {
+            "type": "object",
+            "properties": {
+              "total_questions": {"type": "integer"},
+              "correct_answers": {"type": "integer"},
+              "score_percentage": {"type": "number", "format": "float"},
+              "detailed_results": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DetailedResult"
+                }
+              },
+              "grade": {
+                "type": "string",
+                "enum": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
+              }
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GradingMetadata"
+          }
+        }
+      },
+      "EssayGradingRequest": {
+        "type": "object",
+        "required": ["essay_prompt", "student_essay"],
+        "properties": {
+          "essay_prompt": {
+            "$ref": "#/components/schemas/EssayPrompt"
+          },
+          "student_essay": {
+            "type": "string",
+            "description": "The student's essay text"
+          }
+        }
+      },
+      "DetailedScore": {
+        "type": "object",
+        "properties": {
+          "score": {"type": "integer"},
+          "max_score": {"type": "integer"},
+          "feedback": {"type": "string"}
+        }
+      },
+      "EssayGradingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "grading_result": {
+            "type": "object",
+            "properties": {
+              "overall_score": {"type": "integer"},
+              "word_count": {"type": "integer"},
+              "detailed_scores": {
+                "type": "object",
+                "properties": {
+                  "content": {"$ref": "#/components/schemas/DetailedScore"},
+                  "organization": {"$ref": "#/components/schemas/DetailedScore"},
+                  "grammar": {"$ref": "#/components/schemas/DetailedScore"},
+                  "creativity": {"$ref": "#/components/schemas/DetailedScore"}
+                }
+              },
+              "overall_feedback": {"type": "string"},
+              "grade": {
+                "type": "string",
+                "enum": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
+              }
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/GradingMetadata"
+          }
+        }
+      },
+      "CompleteAssessmentRequest": {
+        "type": "object",
+        "required": ["subject", "topic", "type"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The subject area"
+          },
+          "topic": {
+            "type": "string",
+            "description": "The specific topic within the subject"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["multiple_choice", "essay"],
+            "description": "Type of assessment to create"
+          }
+        }
+      },
+      "CompleteAssessmentResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "assessment": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["multiple_choice", "essay"]
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Question"
+                }
+              },
+              "essay_prompt": {
+                "$ref": "#/components/schemas/EssayPrompt"
+              },
+              "metadata": {
+                "$ref": "#/components/schemas/GenerationMetadata"
+              }
+            }
+          }
+        }
+      },
+      "GenerationMetadata": {
+        "type": "object",
+        "properties": {
+          "subject": {"type": "string"},
+          "topic": {"type": "string"},
+          "num_questions": {"type": "integer"},
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GradingMetadata": {
+        "type": "object",
+        "properties": {
+          "graded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_questions": {"type": "integer"},
+          "word_count": {"type": "integer"}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsageResponse"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "System health and monitoring endpoints"
+    },
+    {
+      "name": "Assessment Generation",
+      "description": "Endpoints for generating assessments and questions"
+    },
+    {
+      "name": "Assessment Grading",
+      "description": "Endpoints for grading assessments and providing feedback"
+    }
+  ]
+} 

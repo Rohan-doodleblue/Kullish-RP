@@ -102,4 +102,4 @@ The system looks for common target column names:
 
 ### urls for testing
 1. https://drive.google.com/file/d/1vhihD-30SLa_clbNwmvqsl_boZDfB7q6/view?usp=sharing
-2.https://github.com/Rohan-doodleblue/datasets/blob/main/winequality-data.zip
+2.https://raw.githubusercontent.com/Rohan-doodleblue/datasets/main/winequality-data.zip

@@ -1,1 +1,127 @@
-key: value
+ElasticNet:
+  alpha: 0.2
+  l1_ratio: 0.1
+
+# Data Transformation Parameters
+data_transformation:
+  # Auto-selection settings
+  auto_selection:
+    enable_cross_validation: true
+    cv_folds: 5
+    scoring_metric: "auto"  # Options: "auto", "accuracy", "f1", "precision", "recall", "r2", "mae", "rmse"
+    optimization_metric: "score"  # Options: "score", "time", "memory"
+    
+  # Missing Value Handling - Multiple options for auto-selection
+  missing_values:
+    strategy: "auto"  # Options: "auto", "drop", "impute", "flag"
+    options:
+      drop:
+        enabled: true
+        max_missing_ratio: 0.5
+      impute:
+        enabled: true
+        methods: ["mean", "median", "mode", "constant"]
+        constant_value: 0
+        advanced_methods: ["knn", "iterative"]
+      flag:
+        enabled: true
+        combine_with_imputation: true
+    max_missing_ratio: 0.5  # Drop columns with >50% missing values
+    
+  # Outlier Handling - Multiple options for auto-selection
+  outliers:
+    strategy: "auto"  # Options: "auto", "iqr", "zscore", "isolation_forest", "none"
+    options:
+      iqr:
+        enabled: true
+        multipliers: [1.0, 1.5, 2.0, 2.5]
+      zscore:
+        enabled: true
+        thresholds: [2.0, 2.5, 3.0, 3.5]
+      isolation_forest:
+        enabled: true
+        contamination: [0.05, 0.1, 0.15]
+      none:
+        enabled: true
+    handling: "auto"  # Options: "auto", "cap", "remove", "flag"
+    handling_options:
+      cap:
+        enabled: true
+      remove:
+        enabled: true
+      flag:
+        enabled: true
+    
+  # Column Handling - Multiple options for auto-selection
+  columns:
+    strategy: "auto"  # Options: "auto", "aggressive", "conservative", "manual"
+    options:
+      high_cardinality:
+        enabled: true
+        thresholds: [20, 30, 50, 100]
+      low_variance:
+        enabled: true
+        variance_ratios: [0.001, 0.01, 0.05, 0.1]
+      correlation:
+        enabled: true
+        correlation_thresholds: [0.7, 0.8, 0.9, 0.95]
+      feature_importance:
+        enabled: true
+        importance_thresholds: [0.001, 0.01, 0.05]
+    drop_duplicates: true
+    drop_id_columns: true
+    
+  # Feature Engineering - Multiple options for auto-selection
+  feature_engineering:
+    strategy: "auto"  # Options: "auto", "minimal", "extensive", "manual"
+    options:
+      date_features:
+        enabled: true
+        extractors: ["basic", "extensive", "custom"]
+      interaction_features:
+        enabled: true
+        correlation_thresholds: [0.5, 0.7, 0.8]
+        max_interactions: [5, 10, 20]
+      polynomial_features:
+        enabled: true
+        degrees: [2, 3]
+        max_features: [10, 20, 50]
+      statistical_features:
+        enabled: true
+        aggregations: ["mean", "std", "min", "max", "count"]
+    
+  # Scaling and Encoding - Multiple options for auto-selection
+  preprocessing:
+    strategy: "auto"  # Options: "auto", "standard", "robust", "minmax", "none"
+    options:
+      scaling:
+        enabled: true
+        methods: ["standard", "robust", "minmax", "none"]
+      encoding:
+        enabled: true
+        methods: ["label", "onehot", "target", "hash"]
+        max_categories: [10, 20, 50, 100]
+      feature_selection:
+        enabled: true
+        methods: ["variance", "mutual_info", "chi2", "f_classif", "f_regression"]
+        k_best: [10, 20, 50, "auto"]
+    
+  # Model Selection for Auto-optimization
+  model_selection:
+    enable: true
+    models:
+      classification:
+        - "logistic_regression"
+        - "random_forest"
+        - "xgboost"
+        - "lightgbm"
+      regression:
+        - "linear_regression"
+        - "random_forest"
+        - "xgboost"
+        - "lightgbm"
+    hyperparameter_tuning:
+      enabled: true
+      method: "random_search"  # Options: "grid_search", "random_search", "bayesian"
+      n_iterations: 20
+      cv_folds: 3

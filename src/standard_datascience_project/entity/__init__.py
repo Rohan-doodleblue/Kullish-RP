@@ -1,0 +1,1 @@
+# Entity module for configuration classes 

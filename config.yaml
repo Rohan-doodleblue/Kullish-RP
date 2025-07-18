@@ -1,0 +1,36 @@
+# Configuration file for Anomaly Detection Pipeline
+
+data_generation:
+  num_users: 1000
+  num_records: 20000
+  anomaly_rate: 0.05
+  success_login_rate: 0.95
+  uncommon_ip_prob: 0.03
+  failed_attempt_limit: 5
+  behavioral_score_low: 40
+  behavioral_score_high: 120
+  seed: 50
+
+model_training:
+  test_size: 0.2
+  random_state: 50
+
+features:
+  numerical_features:
+    - "Session Duration"
+    - "Failed Attempts"
+    - "Behavioral Score"
+  categorical_features:
+    - "Device Type"
+    - "Location"
+    - "Login Status"
+    - "IP Address"
+
+logging:
+  level: "INFO"
+  save_logs: true
+
+output:
+  save_plots: true
+  save_results: true
+  save_models: true 

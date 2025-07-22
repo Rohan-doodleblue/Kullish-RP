@@ -83,7 +83,7 @@ class ModelEvaluator:
             if save_plots:
                 plt.savefig(f'plots/{name}_evaluation.png', dpi=300, bbox_inches='tight')
             
-            plt.show()
+            # plt.show()
     
     def get_best_model(self) -> Tuple[str, float]:
         """Get the best performing model based on ROC AUC"""

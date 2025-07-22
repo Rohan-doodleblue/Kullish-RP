@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import List, Dict, Any
 from ..entity.config_entity import FeatureConfig
+import matplotlib
+matplotlib.use('Agg')
 
 class DataAnalyzer:
     """Component for exploratory data analysis and visualization"""
@@ -90,7 +92,7 @@ class DataAnalyzer:
             
             if save_plots:
                 plt.savefig(f'plots/{feature}_analysis.png', dpi=300, bbox_inches='tight')
-            plt.show()
+            # plt.show()
         
         # Correlation heatmap
         df_temp = df.copy()
@@ -109,7 +111,7 @@ class DataAnalyzer:
         
         if save_plots:
             plt.savefig('plots/correlation_matrix.png', dpi=300, bbox_inches='tight')
-        plt.show()
+        # plt.show()
         
         # Pairplot
         sns.pairplot(
@@ -122,4 +124,4 @@ class DataAnalyzer:
         
         if save_plots:
             plt.savefig('plots/pairplot.png', dpi=300, bbox_inches='tight')
-        plt.show() 
+        # plt.show() 

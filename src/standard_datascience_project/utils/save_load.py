@@ -79,3 +79,8 @@ def load_config(filepath: str) -> Dict[str, Any]:
         config = json.load(f)
     print(f"Configuration loaded from {filepath}")
     return config 
+
+def parse_timestamp(df):
+    df = df.copy()
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+    return df 

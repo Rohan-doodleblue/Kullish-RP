@@ -7,6 +7,11 @@ from sklearn.pipeline import Pipeline
 from typing import Tuple, Any
 from ..entity.config_entity import FeatureConfig, ModelConfig
 
+def extract_time_features(x):
+    x['hour'] = x['Timestamp'].dt.hour
+    x['day_of_week'] = x['Timestamp'].dt.dayofweek
+    return x[['hour', 'day_of_week']]
+
 class FeatureEngineer:
     """Component for feature engineering and data preprocessing"""
     
@@ -29,11 +34,6 @@ class FeatureEngineer:
         ])
         
         # Time features transformer
-        def extract_time_features(x):
-            x['hour'] = x['Timestamp'].dt.hour
-            x['day_of_week'] = x['Timestamp'].dt.dayofweek
-            return x[['hour', 'day_of_week']]
-        
         time_transformer = Pipeline(steps=[
             ('time_features', FunctionTransformer(extract_time_features, validate=False)),
             ('scaler', StandardScaler())

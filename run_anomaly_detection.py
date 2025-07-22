@@ -5,6 +5,7 @@ Main script to run the Anomaly Detection Pipeline
 
 import sys
 import os
+import pandas as pd
 
 # Add the src directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -12,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from standard_datascience_project.pipeline.anomaly_detection_pipeline import AnomalyDetectionPipeline
 from standard_datascience_project.entity.config_entity import AnomalyDetectionConfig
 from standard_datascience_project.utils.logger import setup_logger
-from standard_datascience_project.utils.save_load import save_model, save_config
+from standard_datascience_project.utils.save_load import save_model, save_config, parse_timestamp
 
 def main():
     """Main function to run the anomaly detection pipeline"""
@@ -37,7 +38,21 @@ def main():
         # Save best model and configuration
         best_model_name = results['best_model']
         best_model = results['model_trainer'].get_trained_models()[best_model_name]
-        save_model(best_model, f'results/best_model_{best_model_name.lower().replace(" ", "_")}.pkl')
+        preprocessor = results['feature_engineer'].preprocessor
+
+        # Create and fit full pipeline
+        from sklearn.pipeline import Pipeline
+        from sklearn.preprocessing import FunctionTransformer
+
+        X = results['data'].drop('Anomaly', axis=1)
+        y = results['data']['Anomaly']
+        full_pipeline = Pipeline([
+            ('parse_timestamp', FunctionTransformer(parse_timestamp, validate=False)),
+            ('preprocessor', preprocessor),
+            ('classifier', best_model)
+        ])
+        full_pipeline.fit(X, y)
+        save_model(full_pipeline, f"results/best_model_{best_model_name.lower().replace(' ', '_')}_pipeline.pkl")
         save_config(config, 'results/experiment_config.json')
         
         logger.info("Pipeline completed successfully!")

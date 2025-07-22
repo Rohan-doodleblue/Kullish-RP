@@ -9,6 +9,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 import time
 from dotenv import load_dotenv
+from src.standard_datascience_project.utils.save_load import load_model, parse_timestamp
+import pandas as pd
+import numpy as np
+import threading
 
 # Load environment variables from .env file
 load_dotenv()
@@ -1078,6 +1082,72 @@ def create_complete_curriculum_package():
     except Exception as e:
         logger.error(f"Error in create_complete_curriculum_package: {e}")
         return jsonify({"error": str(e)}), 500
+
+# Thread-safe model loading
+model_lock = threading.Lock()
+model = None
+preprocessor = None
+
+def get_model():
+    global model
+    if model is None:
+        with model_lock:
+            if model is None:
+                model = load_model('results/best_model_random_forest_pipeline.pkl')
+    return model
+
+# If you have a preprocessor.pkl, load it here similarly
+# def get_preprocessor():
+#     global preprocessor
+#     if preprocessor is None:
+#         with model_lock:
+#             if preprocessor is None:
+#                 preprocessor = load_model('results/preprocessor.pkl')
+#     return preprocessor
+
+PREDICT_COLUMNS = [
+    'User ID', 'Timestamp', 'Login Status', 'IP Address', 'Device Type',
+    'Location', 'Session Duration', 'Failed Attempts', 'Behavioral Score'
+]
+
+@app.route('/api/predict', methods=['POST'])
+def predict_anomaly():
+    """Predict anomaly status for input data (single or batch)."""
+    try:
+        data = request.get_json()
+        if data is None:
+            return jsonify({'error': 'No input data provided'}), 400
+
+        if isinstance(data, dict):
+            data = [data]
+        elif not isinstance(data, list):
+            return jsonify({'error': 'Input must be a dict or list of dicts'}), 400
+
+        # Validate columns (optional, but you can keep it)
+        for record in data:
+            missing = [col for col in PREDICT_COLUMNS if col not in record]
+            if missing:
+                return jsonify({'error': f'Missing columns: {missing}'}), 400
+
+        df = pd.DataFrame(data)
+        model = get_model()
+        preds = model.predict(df)
+        if hasattr(model, 'predict_proba'):
+            proba = model.predict_proba(df)[:, 1].tolist()
+        else:
+            proba = [None] * len(preds)
+
+        response = []
+        for i, record in enumerate(data):
+            response.append({
+                'input': record,
+                'predicted_anomaly': int(preds[i]),
+                'anomaly_probability': proba[i]
+            })
+        return jsonify({'predictions': response, 'count': len(response)})
+    except Exception as e:
+        logger.error(f"Error in predict_anomaly: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

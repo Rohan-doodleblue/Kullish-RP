@@ -138,18 +138,18 @@ for feature in numerical_features:
     plt.title(f'Box Plot of {feature} by Anomaly Status')
     plt.xlabel('Anomaly Status')
     plt.ylabel(feature)
-    plt.show()
+    # plt.show()
 
 # Heatmap for the correlation matrix of numerical features
 plt.figure(figsize=(10, 8))
 sns.heatmap(correlation_matrix, annot=True, fmt=".2f", cmap='coolwarm', cbar_kws={'label': 'Correlation Coefficient'})
 plt.title('Correlation Matrix of Numerical Features')
-plt.show()
+# plt.show()
 
 # Pairplot for pairwise relationships, segmented by Anomaly status
 sns.pairplot(df, hue='Anomaly', vars=numerical_features, palette={0: 'skyblue', 1: 'salmon'})
 plt.suptitle('Pairwise relationships by Anomaly Status', verticalalignment='top')
-plt.show()
+# plt.show()
 
 
 
@@ -241,7 +241,7 @@ for name, outcomes in model_predictions.items():
     plot_confusion_matrix(cm, classes=['Normal', 'Anomaly'], title=f'{name} Confusion Matrix')
     plot_roc_curve(fpr, tpr, name, roc_auc)
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 # Collect and compare ROC AUC scores
 roc_auc_scores = {name: auc(roc_curve(y_test, outcomes['probabilities'])[0],

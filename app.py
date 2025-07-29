@@ -1822,6 +1822,324 @@ class MessageBodyEnhancer:
 # Initialize message body enhancer
 message_body_enhancer = MessageBodyEnhancer()
 
+class SchoolCompliantMessageEnhancer:
+    """School-compliant message enhancement with strict guardrails and school regulations"""
+    
+    def __init__(self):
+        # Test database connection on initialization
+        if not db_manager.test_connection():
+            logger.warning("Database connection failed. Context will be limited.")
+    
+    def add_school_message_to_context(self, original_message: str, enhanced_messages: List[str], 
+                                    context_type: str = "school_message_enhancement", 
+                                    domain: str = "school"):
+        """Add enhanced school messages to database context for better continuity"""
+        try:
+            success = db_manager.add_message_context(
+                original_message=original_message,
+                enhanced_messages=enhanced_messages,
+                context_type=context_type,
+                domain=domain
+            )
+            if success:
+                logger.info(f"Added school message enhancement to context: {original_message[:30]}...")
+            else:
+                logger.error("Failed to add school message enhancement to context")
+        except Exception as e:
+            logger.error(f"Error adding school message to context: {e}")
+    
+    def get_school_message_context_summary(self, domain: str = "school") -> str:
+        """Get a summary of recent school message enhancements for context from database"""
+        try:
+            return db_manager.get_message_context_summary(domain=domain, limit=3)
+        except Exception as e:
+            logger.error(f"Error getting school message context summary: {e}")
+            return "No previous school message enhancements."
+    
+    def enhance_school_message(self, original_message: str, context_type: str = "school", 
+                             domain: str = "school", max_length: int = 500, 
+                             style_preference: str = "professional", 
+                             tone: str = "professional") -> Dict:
+        """Create enhanced school-compliant message suggestions with strict guardrails"""
+        
+        # Validate context type for school environment
+        valid_context_types = [
+            "school", "academic", "administrative", "parent_communication", 
+            "student_communication", "staff_communication", "safety", "discipline"
+        ]
+        if context_type not in valid_context_types:
+            context_type = "school"
+        
+        # Validate style preference for school environment
+        valid_styles = [
+            "professional", "formal", "educational", "inclusive", 
+            "supportive", "authoritative", "encouraging"
+        ]
+        if style_preference not in valid_styles:
+            style_preference = "professional"
+        
+        # Validate tone for school environment
+        valid_tones = [
+            "professional", "formal", "supportive", "encouraging", 
+            "authoritative", "inclusive", "educational"
+        ]
+        if tone not in valid_tones:
+            tone = "professional"
+        
+        # Build context-aware prompt with strict school guardrails
+        context_summary = self.get_school_message_context_summary(domain)
+        
+        # Use the guardrails prompt template
+        prompt = GUARDRAILS_PROMPT_TEMPLATE.format(
+            context_summary=context_summary,
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            style_preference=style_preference,
+            tone=tone,
+            max_length=max_length,
+            exclude_instruction=""
+        )
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_messages = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error in school message enhancement: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic school-compliant structure
+                enhanced_messages = {
+                    "enhanced_messages": [
+                        {
+                            "message": f"Enhanced school message: {original_message[:max_length-30]}"
+                        },
+                        {
+                            "message": f"Alternative school communication: {original_message[:max_length-35]}"
+                        },
+                        {
+                            "message": f"Professional school notice: {original_message[:max_length-30]}"
+                        }
+                    ]
+                }
+            
+            # Add to database context (use first option as primary)
+            if 'enhanced_messages' in enhanced_messages and len(enhanced_messages['enhanced_messages']) > 0:
+                first_option = enhanced_messages['enhanced_messages'][0]
+                self.add_school_message_to_context(
+                    original_message=original_message,
+                    enhanced_messages=[msg["message"] for msg in enhanced_messages["enhanced_messages"]],
+                    context_type=context_type,
+                    domain=domain
+                )
+            
+            return enhanced_messages
+            
+        except Exception as e:
+            logger.error(f"Error creating enhanced school message: {e}")
+            raise Exception(f"Failed to create enhanced school message: {str(e)}")
+    
+    def regenerate_school_messages(self, original_message: str, context_type: str = "school", 
+                                 domain: str = "school", max_length: int = 500, 
+                                 style_preference: str = "professional", 
+                                 tone: str = "professional",
+                                 exclude_previous: bool = True) -> Dict:
+        """Regenerate school-compliant message suggestions with context awareness and strict guardrails"""
+        
+        # Validate context type for school environment
+        valid_context_types = [
+            "school", "academic", "administrative", "parent_communication", 
+            "student_communication", "staff_communication", "safety", "discipline"
+        ]
+        if context_type not in valid_context_types:
+            context_type = "school"
+        
+        # Validate style preference for school environment
+        valid_styles = [
+            "professional", "formal", "educational", "inclusive", 
+            "supportive", "authoritative", "encouraging"
+        ]
+        if style_preference not in valid_styles:
+            style_preference = "professional"
+        
+        # Validate tone for school environment
+        valid_tones = [
+            "professional", "formal", "supportive", "encouraging", 
+            "authoritative", "inclusive", "educational"
+        ]
+        if tone not in valid_tones:
+            tone = "professional"
+        
+        # Build context-aware prompt with strict school guardrails
+        context_summary = self.get_school_message_context_summary(domain)
+        
+        exclude_instruction = ""
+        if exclude_previous:
+            exclude_instruction = "IMPORTANT: Exclude any previous message styles or approaches to ensure variety."
+        
+        # Use the guardrails prompt template
+        prompt = GUARDRAILS_PROMPT_TEMPLATE.format(
+            context_summary=context_summary,
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            style_preference=style_preference,
+            tone=tone,
+            max_length=max_length,
+            exclude_instruction=exclude_instruction
+        )
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.8
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_messages = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error in school message regeneration: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic school-compliant structure
+                enhanced_messages = {
+                    "enhanced_messages": [
+                        {
+                            "message": f"Regenerated school message: {original_message[:max_length-35]}"
+                        },
+                        {
+                            "message": f"Alternative school communication: {original_message[:max_length-40]}"
+                        },
+                        {
+                            "message": f"Updated school notice: {original_message[:max_length-30]}"
+                        }
+                    ]
+                }
+            
+            # Add to database context (use first option as primary)
+            if 'enhanced_messages' in enhanced_messages and len(enhanced_messages['enhanced_messages']) > 0:
+                first_option = enhanced_messages['enhanced_messages'][0]
+                self.add_school_message_to_context(
+                    original_message=original_message,
+                    enhanced_messages=[msg["message"] for msg in enhanced_messages["enhanced_messages"]],
+                    context_type=context_type,
+                    domain=domain
+                )
+            
+            return enhanced_messages
+            
+        except Exception as e:
+            logger.error(f"Error regenerating enhanced school message: {e}")
+            raise Exception(f"Failed to regenerate enhanced school message: {str(e)}")
+
+# Guardrails Prompt Template
+GUARDRAILS_PROMPT_TEMPLATE = """
+Create THREE UNIQUE and DISTINCTLY DIFFERENT enhanced message suggestions for a SCHOOL environment with STRICT COMPLIANCE to school rules and regulations.
+
+CONTEXT:
+{context_summary}
+
+INPUT INFORMATION:
+- Original Message: "{original_message}"
+- Context Type: {context_type}
+- Domain: {domain}
+- Style Preference: {style_preference}
+- Tone: {tone}
+- Maximum Length: {max_length} characters
+{exclude_instruction}
+
+STRICT SCHOOL GUARDRAILS - MUST COMPLY WITH ALL:
+1. **SCHOOL SAFETY FIRST**: No content that could compromise student safety, security, or well-being
+2. **INCLUSIVE LANGUAGE**: Use inclusive, non-discriminatory language that respects all students, families, and staff
+3. **EDUCATIONAL FOCUS**: Maintain educational purpose and academic integrity
+4. **PROFESSIONAL STANDARDS**: Follow professional communication standards suitable for educational institutions
+5. **CONFIDENTIALITY**: No references to individual student information, grades, or personal details
+6. **POSITIVE TONE**: Maintain positive, encouraging, and supportive tone
+7. **CLEAR COMMUNICATION**: Use clear, concise language appropriate for the target audience
+8. **COMPLIANCE**: Ensure compliance with school policies, district regulations, and educational standards
+9. **RESPECT**: Show respect for all stakeholders (students, parents, staff, community)
+10. **APPROPRIATE CONTENT**: No content that could be considered inappropriate for school environment
+
+SCHOOL-SPECIFIC REQUIREMENTS:
+- Use "Dear Parents", "Dear Students", "Dear Staff" instead of casual greetings
+- Include clear action items or next steps when appropriate
+- Maintain professional boundaries and appropriate authority
+- Use educational terminology and school-appropriate language
+- Ensure messages are accessible to diverse audiences
+- Include relevant school contact information when appropriate
+- Follow school communication protocols and hierarchy
+
+FORBIDDEN CONTENT (STRICTLY PROHIBITED):
+- Personal student information or academic records
+- Discriminatory or exclusionary language
+- Inappropriate humor or casual language
+- References to specific individuals without proper context
+- Content that could create safety concerns
+- Language that could be misinterpreted or cause confusion
+- References to controversial topics not related to education
+- Casual or informal communication styles
+
+REQUIREMENTS:
+1. CREATE 3 DIFFERENT OPTIONS: Each with unique approach while maintaining school compliance
+2. LENGTH LIMITS: Maximum {max_length} characters per message - make them comprehensive and informative
+3. MAINTAIN CONSISTENCY: Ensure all options align with recent school communications in tone and style
+4. SCHOOL-APPROPRIATE TONE: Use language suitable for educational environment
+5. CONTEXT AWARENESS: Reference or build upon previous school communications when relevant
+6. USE MOST OF THE AVAILABLE CHARACTERS: Provide detailed, comprehensive content
+7. DETAILED CONTENT: Include specific information, clear instructions, and actionable items
+
+Return the response as JSON with the following structure:
+{{
+    "enhanced_messages": [
+        {{
+            "message": "First enhanced message option (max {max_length} chars) - detailed and comprehensive"
+        }},
+        {{
+            "message": "Second enhanced message option (max {max_length} chars) - alternative approach"
+        }},
+        {{
+            "message": "Third enhanced message option (max {max_length} chars) - different style"
+        }}
+    ]
+}}
+
+IMPORTANT: 
+- Each message must be exactly {max_length} characters or less
+- Provide 3 distinctly different approaches while maintaining school compliance
+- Use school-appropriate language and tone throughout
+- Focus on educational context and professional communication
+- Ensure all content passes school safety and compliance checks
+- USE MOST OF THE AVAILABLE CHARACTERS for detailed, comprehensive content
+"""
+
+# Initialize school-compliant message enhancer
+school_message_enhancer = SchoolCompliantMessageEnhancer()
+
 # API Routes
 
 @app.route('/')
@@ -3275,6 +3593,151 @@ def delete_message_enhancement(enhancement_id: int):
         
     except Exception as e:
         logger.error(f"Error in delete_message_enhancement: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# School-Compliant Message Enhancement API Routes
+
+@app.route('/api/enhance-withGuardrails', methods=['POST'])
+def enhance_school_message():
+    """Enhance a message with 3 unique suggestions following strict school guardrails"""
+    try:
+        data = request.get_json()
+        original_message = data.get('original_message')
+        context_type = data.get('context_type', 'school')
+        domain = data.get('domain', 'school')
+        max_length = data.get('max_length', 500)
+        style_preference = data.get('style_preference', 'professional')
+        tone = data.get('tone', 'professional')
+        
+        # Validate required parameters
+        if not original_message:
+            return jsonify({
+                "error": "Missing required parameter: original_message"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 50 or max_length > 2000:
+            return jsonify({
+                "error": "max_length must be between 50 and 2000 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 700  # Rough estimate for school message enhancement
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_messages = school_message_enhancer.enhance_school_message(
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference,
+            tone=tone
+        )
+        
+        # Track LLM usage for school message enhancement
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 400  # Add buffer for school guardrails
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "school_message_enhancement")
+        
+        # Extract just the messages as a simple array
+        message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+        
+        # Convert to array of arrays format
+        messages_object = {}
+        for i, message in enumerate(message_array, 1):
+            messages_object[f"message{i}"] = message
+        
+        return jsonify({
+            "success": True,
+            "messages": messages_object,
+            "metadata": {
+                "guardrails_applied": True,
+                "school_compliant": True,
+                "context_type": context_type,
+                "domain": domain
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in enhance_school_message: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/school/message/regenerate', methods=['POST'])
+def regenerate_school_messages():
+    """Regenerate school-compliant message suggestions with context awareness and strict guardrails"""
+    try:
+        data = request.get_json()
+        original_message = data.get('original_message')
+        context_type = data.get('context_type', 'school')
+        domain = data.get('domain', 'school')
+        max_length = data.get('max_length', 500)
+        style_preference = data.get('style_preference', 'professional')
+        tone = data.get('tone', 'professional')
+        exclude_previous = data.get('exclude_previous', True)
+        
+        # Validate required parameters
+        if not original_message:
+            return jsonify({
+                "error": "Missing required parameter: original_message"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 50 or max_length > 2000:
+            return jsonify({
+                "error": "max_length must be between 50 and 2000 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 750  # Rough estimate for school message regeneration
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_messages = school_message_enhancer.regenerate_school_messages(
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference,
+            tone=tone,
+            exclude_previous=exclude_previous
+        )
+        
+        # Track LLM usage for school message regeneration
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 450  # Add buffer for school guardrails
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "school_message_regeneration")
+        
+        # Extract just the messages as a simple array
+        message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+        
+        # Convert to array of arrays format
+        messages_object = {}
+        for i, message in enumerate(message_array, 1):
+            messages_object[f"message{i}"] = message
+        
+        return jsonify({
+            "success": True,
+            "messages": messages_object,
+            "metadata": {
+                "guardrails_applied": True,
+                "school_compliant": True,
+                "context_type": context_type,
+                "domain": domain,
+                "exclude_previous": exclude_previous
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in regenerate_school_messages: {e}")
         return jsonify({"error": str(e)}), 500
 
 # Database-based LLM Usage Tracking

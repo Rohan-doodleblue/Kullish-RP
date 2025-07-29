@@ -19,14 +19,26 @@ import pg8000
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Database configuration
+# Load environment variables
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Database configuration from environment variables
 DB_CONFIG = {
-    'host': 'localhost',  # Use localhost since we're tunneling
-    'username': 'admin',
-    'password': 'Doodle2025$',
-    'database': 'kulish_dev',
-    'port': 5433  # Use the tunneled port
+    'host': os.getenv('DB_HOST'),
+    'username': os.getenv('DB_USERNAME'),
+    'password': os.getenv('DB_PASSWORD'),
+    'database': os.getenv('DB_NAME'),
+    'port': int(os.getenv('DB_PORT', '5433'))
 }
+
+# Validate that all required environment variables are set
+required_vars = ['DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME']
+missing_vars = [var for var in required_vars if not os.getenv(var)]
+if missing_vars:
+    raise ValueError(f"Missing required environment variables: {missing_vars}")
 
 Base = declarative_base()
 

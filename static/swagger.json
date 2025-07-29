@@ -1056,7 +1056,9 @@
                 "message_body": "Parent Teacher Meeting scheduled for next week",
                 "announcement_type": "PTM/Meetings",
                 "target_audience": "Family - Primary Wing",
-                "tone": "Professional"
+                "tone": "Professional",
+                "max_title_length": 25,
+                "max_message_length": 500
               }
             }
           }
@@ -2339,6 +2341,22 @@
             "description": "Desired tone for the announcement",
             "default": "Professional",
             "example": "Professional"
+          },
+          "max_title_length": {
+            "type": "integer",
+            "description": "Maximum characters for title",
+            "default": 20,
+            "minimum": 5,
+            "maximum": 100,
+            "example": 20
+          },
+          "max_message_length": {
+            "type": "integer",
+            "description": "Maximum characters for message",
+            "default": 400,
+            "minimum": 50,
+            "maximum": 1000,
+            "example": 400
           }
         }
       },

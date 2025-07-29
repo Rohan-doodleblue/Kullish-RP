@@ -684,7 +684,8 @@ class AnnouncementGenerator:
             return "No previous announcements."
     
     def create_enhanced_announcement(self, title: str, message_body: str, announcement_type: str = "General Notice", 
-                                   target_audience: str = "All", tone: str = "Professional") -> Dict:
+                                   target_audience: str = "All", tone: str = "Professional", 
+                                   max_title_length: int = 20, max_message_length: int = 400) -> Dict:
         """Create an enhanced announcement with improved title and professional message body"""
         
         # Validate announcement type
@@ -722,8 +723,8 @@ class AnnouncementGenerator:
 
         REQUIREMENTS:
         1. CREATE 3 DIFFERENT OPTIONS: Each with unique approach and style
-        2. TITLE LIMITS: Maximum 20 characters per title - make them concise, clear, and school-appropriate
-        3. MESSAGE BODY LIMITS: Maximum 400 characters per message - include key information, clear instructions, and school-appropriate tone
+        2. TITLE LIMITS: Maximum {max_title_length} characters per title - make them concise, clear, and school-appropriate
+        3. MESSAGE BODY LIMITS: Maximum {max_message_length} characters per message - include key information, clear instructions, and school-appropriate tone
         4. MAINTAIN CONSISTENCY: Ensure all options align with recent announcements in tone and style
         5. SCHOOL-APPROPRIATE TONE: Use language suitable for school environment (not corporate/business)
         6. CONTEXT AWARENESS: Reference or build upon previous announcements when relevant
@@ -739,16 +740,16 @@ class AnnouncementGenerator:
         {{
             "options": [
                 {{
-                    "title": "Title option 1 (max 20 chars)",
-                    "message": "Message option 1 (max 400 chars)"
+                    "title": "Title option 1 (max {max_title_length} chars)",
+                    "message": "Message option 1 (max {max_message_length} chars)"
                 }},
                 {{
-                    "title": "Title option 2 (max 20 chars)", 
-                    "message": "Message option 2 (max 400 chars)"
+                    "title": "Title option 2 (max {max_title_length} chars)", 
+                    "message": "Message option 2 (max {max_message_length} chars)"
                 }},
                 {{
-                    "title": "Title option 3 (max 20 chars)",
-                    "message": "Message option 3 (max 400 chars)"
+                    "title": "Title option 3 (max {max_title_length} chars)",
+                    "message": "Message option 3 (max {max_message_length} chars)"
                 }}
             ]
         }}
@@ -756,8 +757,8 @@ class AnnouncementGenerator:
         IMPORTANT: Always put "title" first, then "message" in each option object.
 
         IMPORTANT: 
-        - Each title must be exactly 20 characters or less
-        - Each message must be exactly 400 characters or less
+        - Each title must be exactly {max_title_length} characters or less
+        - Each message must be exactly {max_message_length} characters or less
         - Provide 3 distinctly different approaches
         - Use school-appropriate language and tone
         - Focus on educational context, not business context
@@ -1534,10 +1535,11 @@ def create_enhanced_announcement():
         data = request.get_json()
         title = data.get('title')
         message_body = data.get('message_body')
-        announcement_type = data.get('announcement_type', 'General')
-        target_audience = data.get('target_audience', 'All Staff')
+        announcement_type = data.get('announcement_type', 'General Notice')
+        target_audience = data.get('target_audience', 'All')
         tone = data.get('tone', 'Professional')
-        include_suggestions = data.get('include_suggestions', True)
+        max_title_length = data.get('max_title_length', 20)
+        max_message_length = data.get('max_message_length', 400)
         
         # Validate required parameters
         if not title or not message_body:
@@ -1555,11 +1557,13 @@ def create_enhanced_announcement():
         
         # Generate enhanced announcement
         enhanced_announcement = announcement_generator.create_enhanced_announcement(
-            title, message_body, announcement_type, target_audience, tone
+            title, message_body, announcement_type, target_audience, tone, 
+            max_title_length, max_message_length
         )
         
         # Get suggestions if requested
         suggestions = None
+        include_suggestions = data.get('include_suggestions', False)
         if include_suggestions:
             suggestions = announcement_generator.get_announcement_suggestions(
                 announcement_type, target_audience

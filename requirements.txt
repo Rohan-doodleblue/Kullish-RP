@@ -4,9 +4,11 @@ openai==0.28.1
 python-dotenv==1.0.0
 Werkzeug==2.3.7
 flask-swagger-ui==4.11.1 
+pg8000==1.31.4
+SQLAlchemy==2.0.21
 
 numpy
 pandas
 matplotlib
 seaborn
-scikit-learn
+scikit-learn 

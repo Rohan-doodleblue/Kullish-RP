@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
-import openai
+from openai import OpenAI
 import os
 import json
 import logging
@@ -44,8 +44,8 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 from config import Config
 
 # Initialize OpenAI client
-openai.api_key = Config.OPENAI_API_KEY
-if not openai.api_key or openai.api_key == 'your-openai-api-key-here':
+client = OpenAI(api_key=Config.OPENAI_API_KEY)
+if not Config.OPENAI_API_KEY or Config.OPENAI_API_KEY == 'your-openai-api-key-here':
     raise ValueError("Please set your OPENAI_API_KEY in the .env file")
 
 class TokenUsageTracker:
@@ -133,7 +133,7 @@ class AssessmentGenerator:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -172,7 +172,7 @@ class AssessmentGenerator:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -272,7 +272,7 @@ class CurriculumAssistant:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -342,7 +342,7 @@ class CurriculumAssistant:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -409,7 +409,7 @@ class CurriculumAssistant:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -488,7 +488,7 @@ class CurriculumAssistant:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -597,7 +597,7 @@ class AssessmentGrader:
         """
         
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=Config.MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=Config.MAX_TOKENS_PER_REQUEST,
@@ -644,6 +644,277 @@ class AssessmentGrader:
             return "D-"
         else:
             return "F"
+
+class AnnouncementGenerator:
+    """Generate enhanced announcements with professional tone and context management"""
+    
+    def __init__(self):
+        # Test database connection on initialization
+        if not db_manager.test_connection():
+            logger.warning("Database connection failed. Context will be limited.")
+    
+    def add_to_context(self, announcement_type: str, original_title: str, original_message: str, 
+                      enhanced_title: str, enhanced_message: str, target_audience: str, 
+                      tone: str, context_connections: str = None):
+        """Add announcement to database context for better continuity"""
+        try:
+            success = db_manager.add_announcement_context(
+                announcement_type=announcement_type,
+                original_title=original_title,
+                original_message=original_message,
+                enhanced_title=enhanced_title,
+                enhanced_message=enhanced_message,
+                target_audience=target_audience,
+                tone=tone,
+                context_connections=context_connections
+            )
+            if success:
+                logger.info(f"Added announcement to context: {enhanced_title[:50]}...")
+            else:
+                logger.error("Failed to add announcement to context")
+        except Exception as e:
+            logger.error(f"Error adding to context: {e}")
+    
+    def get_context_summary(self) -> str:
+        """Get a summary of recent announcements for context from database"""
+        try:
+            return db_manager.get_context_summary(limit=3)
+        except Exception as e:
+            logger.error(f"Error getting context summary: {e}")
+            return "No previous announcements."
+    
+    def create_enhanced_announcement(self, title: str, message_body: str, announcement_type: str = "General Notice", 
+                                   target_audience: str = "All", tone: str = "Professional") -> Dict:
+        """Create an enhanced announcement with improved title and professional message body"""
+        
+        # Validate announcement type
+        valid_announcement_types = [
+            "General Notice", "Academic Update", "Events", "Holiday/Closure", "PTM/Meetings"
+        ]
+        if announcement_type not in valid_announcement_types:
+            announcement_type = "General Notice"  # Default fallback
+        
+        # Validate target audience
+        valid_target_audiences = [
+            "All", 
+            "Staff Members - Primary Wing", "Staff Members - Secondary Wing",
+            "Teachers - Primary Wing", "Teachers - Secondary Wing", 
+            "Family - Primary Wing", "Family - Secondary Wing"
+        ]
+        if target_audience not in valid_target_audiences:
+            target_audience = "All"  # Default fallback
+        
+        # Build context-aware prompt
+        context_summary = self.get_context_summary()
+        
+        prompt = f"""
+        Create THREE different enhanced announcement options for a SCHOOL environment. This is for school administrators to communicate with staff, teachers, and families. Consider the context of recent announcements to maintain consistency and avoid repetition.
+
+        CONTEXT:
+        {context_summary}
+
+        INPUT INFORMATION:
+        - Original Title: {title}
+        - Original Message: {message_body}
+        - Announcement Type: {announcement_type}
+        - Target Audience: {target_audience}
+        - Desired Tone: {tone}
+
+        REQUIREMENTS:
+        1. CREATE 3 DIFFERENT OPTIONS: Each with unique approach and style
+        2. TITLE LIMITS: Maximum 20 characters per title - make them concise, clear, and school-appropriate
+        3. MESSAGE BODY LIMITS: Maximum 400 characters per message - include key information, clear instructions, and school-appropriate tone
+        4. MAINTAIN CONSISTENCY: Ensure all options align with recent announcements in tone and style
+        5. SCHOOL-APPROPRIATE TONE: Use language suitable for school environment (not corporate/business)
+        6. CONTEXT AWARENESS: Reference or build upon previous announcements when relevant
+
+        SCHOOL-SPECIFIC GUIDELINES:
+        - Use "Dear Parents", "Dear Teachers", "Dear Staff" instead of "Dear Team"
+        - Use "school", "students", "parents", "teachers" instead of corporate terms
+        - Keep tone warm, informative, and educational
+        - Focus on student welfare, academic progress, and school community
+        - Avoid business jargon like "quarterly reviews", "performance metrics", "stakeholders"
+
+        Return the response as JSON with the following structure:
+        {{
+            "options": [
+                {{
+                    "title": "Title option 1 (max 20 chars)",
+                    "message": "Message option 1 (max 400 chars)"
+                }},
+                {{
+                    "title": "Title option 2 (max 20 chars)", 
+                    "message": "Message option 2 (max 400 chars)"
+                }},
+                {{
+                    "title": "Title option 3 (max 20 chars)",
+                    "message": "Message option 3 (max 400 chars)"
+                }}
+            ]
+        }}
+
+        IMPORTANT: Always put "title" first, then "message" in each option object.
+
+        IMPORTANT: 
+        - Each title must be exactly 20 characters or less
+        - Each message must be exactly 400 characters or less
+        - Provide 3 distinctly different approaches
+        - Use school-appropriate language and tone
+        - Focus on educational context, not business context
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_announcement = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic structure
+                enhanced_announcement = {
+                    "options": [
+                        {
+                            "title": f"Enhanced: {title[:17]}",
+                            "message": f"Enhanced message: {message_body[:380]}"
+                        },
+                        {
+                            "title": f"Update: {title[:15]}",
+                            "message": f"Updated announcement: {message_body[:380]}"
+                        },
+                        {
+                            "title": f"Notice: {title[:15]}",
+                            "message": f"Important notice: {message_body[:380]}"
+                        }
+                    ]
+                }
+            
+            # Ensure title comes before message in each option
+            if 'options' in enhanced_announcement:
+                reordered_options = []
+                for option in enhanced_announcement['options']:
+                    if 'title' in option and 'message' in option:
+                        # Create new dict with title first
+                        reordered_option = {
+                            'title': option['title'],
+                            'message': option['message']
+                        }
+                        reordered_options.append(reordered_option)
+                    else:
+                        reordered_options.append(option)
+                enhanced_announcement['options'] = reordered_options
+            
+            # Add to database context (use first option as primary)
+            if 'options' in enhanced_announcement and len(enhanced_announcement['options']) > 0:
+                first_option = enhanced_announcement['options'][0]
+                self.add_to_context(
+                    announcement_type=announcement_type,
+                    original_title=title,
+                    original_message=message_body,
+                    enhanced_title=first_option['title'],
+                    enhanced_message=first_option['message'],
+                    target_audience=target_audience,
+                    tone=tone,
+                    context_connections=None
+                )
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return enhanced_announcement
+            
+        except Exception as e:
+            logger.error(f"Error creating enhanced announcement: {e}")
+            raise Exception(f"Failed to create enhanced announcement: {str(e)}")
+    
+    def get_announcement_suggestions(self, announcement_type: str, target_audience: str) -> Dict:
+        """Get suggestions for announcement structure and content based on type and audience"""
+        
+        prompt = f"""
+        Provide focused suggestions for creating effective announcements for:
+        - Type: {announcement_type}
+        - Target Audience: {target_audience}
+
+        Consider the context of recent announcements:
+        {self.get_context_summary()}
+
+        IMPORTANT: Provide exactly 3 suggestions for each category. Keep suggestions concise and actionable.
+
+        Return the response as JSON with the following structure:
+        {{
+            "title_suggestions": [
+                "First title suggestion for {announcement_type} announcements",
+                "Second title suggestion with alternative approach",
+                "Third title suggestion following best practices"
+            ],
+            "message_body_suggestions": [
+                "First message structure suggestion for {target_audience}",
+                "Second message content approach",
+                "Third message formatting recommendation"
+            ],
+            "tone_suggestions": [
+                "First tone recommendation for {target_audience}",
+                "Second language style suggestion",
+                "Third communication approach"
+            ],
+            "context_considerations": "How to build upon or reference previous announcements effectively",
+            "audience_specific_notes": "Tailored recommendations for the specific target audience"
+        }}
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.6
+            )
+            
+            content = response.choices[0].message.content
+            suggestions = json.loads(content)
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Error getting announcement suggestions: {e}")
+            raise Exception(f"Failed to get announcement suggestions: {str(e)}")
+    
+    def clear_context(self):
+        """Clear the context history from database"""
+        try:
+            success = db_manager.clear_context()
+            if success:
+                return {"message": "Context history cleared successfully from database"}
+            else:
+                return {"message": "Failed to clear context history"}
+        except Exception as e:
+            logger.error(f"Error clearing context: {e}")
+            return {"message": f"Error clearing context: {str(e)}"}
+
+# Import database manager
+from database_manager import db_manager
+
+# Initialize announcement generator
+announcement_generator = AnnouncementGenerator()
 
 # API Routes
 
@@ -1081,6 +1352,244 @@ def create_complete_curriculum_package():
         
     except Exception as e:
         logger.error(f"Error in create_complete_curriculum_package: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Announcement API Routes
+
+
+
+@app.route('/api/announcement/suggestions', methods=['POST'])
+def get_announcement_suggestions():
+    """Get suggestions for announcement structure and content"""
+    try:
+        data = request.get_json()
+        announcement_type = data.get('announcement_type', 'General')
+        target_audience = data.get('target_audience', 'All Staff')
+        
+        # Check token limit
+        estimated_tokens = 600  # Rough estimate for suggestions
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        suggestions = announcement_generator.get_announcement_suggestions(
+            announcement_type, target_audience
+        )
+        
+        return jsonify({
+            "success": True,
+            "suggestions": suggestions,
+            "metadata": {
+                "announcement_type": announcement_type,
+                "target_audience": target_audience,
+                "generated_at": datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_announcement_suggestions: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context', methods=['GET'])
+def get_announcement_context():
+    """Get current announcement context history from database"""
+    try:
+        context_summary = announcement_generator.get_context_summary()
+        recent_announcements = db_manager.get_recent_announcements(limit=5)
+        stats = db_manager.get_announcement_stats()
+        
+        return jsonify({
+            "success": True,
+            "context_summary": context_summary,
+            "context_count": stats["total_announcements"],
+            "recent_announcements": recent_announcements,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_announcement_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context/clear', methods=['POST'])
+def clear_announcement_context():
+    """Clear the announcement context history from database"""
+    try:
+        result = announcement_generator.clear_context()
+        
+        return jsonify({
+            "success": True,
+            "result": result,
+            "metadata": {
+                "cleared_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in clear_announcement_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context/by-type/<announcement_type>', methods=['GET'])
+def get_announcements_by_type(announcement_type: str):
+    """Get announcements by type from database"""
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        announcements = db_manager.get_announcements_by_type(announcement_type, limit)
+        
+        return jsonify({
+            "success": True,
+            "announcement_type": announcement_type,
+            "announcements": announcements,
+            "count": len(announcements),
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_announcements_by_type: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context/by-audience/<target_audience>', methods=['GET'])
+def get_announcements_by_audience(target_audience: str):
+    """Get announcements by target audience from database"""
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        announcements = db_manager.get_announcements_by_audience(target_audience, limit)
+        
+        return jsonify({
+            "success": True,
+            "target_audience": target_audience,
+            "announcements": announcements,
+            "count": len(announcements),
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_announcements_by_audience: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context/stats', methods=['GET'])
+def get_announcement_stats():
+    """Get announcement statistics from database"""
+    try:
+        stats = db_manager.get_announcement_stats()
+        
+        return jsonify({
+            "success": True,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_announcement_stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/context/delete/<int:announcement_id>', methods=['DELETE'])
+def delete_announcement(announcement_id: int):
+    """Delete specific announcement from database"""
+    try:
+        success = db_manager.delete_announcement(announcement_id)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Announcement {announcement_id} deleted successfully",
+                "metadata": {
+                    "deleted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Failed to delete announcement {announcement_id}",
+                "metadata": {
+                    "attempted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            }), 404
+        
+    except Exception as e:
+        logger.error(f"Error in delete_announcement: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/announcement/create', methods=['POST'])
+def create_enhanced_announcement():
+    """Create an enhanced announcement with improved title and professional message body"""
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        message_body = data.get('message_body')
+        announcement_type = data.get('announcement_type', 'General')
+        target_audience = data.get('target_audience', 'All Staff')
+        tone = data.get('tone', 'Professional')
+        include_suggestions = data.get('include_suggestions', True)
+        
+        # Validate required parameters
+        if not title or not message_body:
+            return jsonify({
+                "error": "Missing required parameters. Please provide: title and message_body"
+            }), 400
+        
+        # Check token limit for complete package
+        estimated_tokens = 1200  # Rough estimate for complete package
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        # Generate enhanced announcement
+        enhanced_announcement = announcement_generator.create_enhanced_announcement(
+            title, message_body, announcement_type, target_audience, tone
+        )
+        
+        # Get suggestions if requested
+        suggestions = None
+        if include_suggestions:
+            suggestions = announcement_generator.get_announcement_suggestions(
+                announcement_type, target_audience
+            )
+        
+        # Convert to numbered object format for easy frontend parsing
+        response_options = []
+        for i, option in enumerate(enhanced_announcement["options"], 1):
+            if 'title' in option and 'message' in option:
+                # Format: {"title1": "...", "message1": "..."}
+                option_object = {
+                    f"title{i}": option['title'],
+                    f"message{i}": option['message']
+                }
+                response_options.append(option_object)
+            else:
+                response_options.append({f"option{i}": str(option)})
+        
+        # Create response as array of numbered objects
+        response_data = {
+            "success": True,
+            "options": response_options
+        }
+        
+        # Convert to JSON string
+        response_json = json.dumps(response_data, separators=(',', ':'))
+        return app.response_class(response_json, mimetype='application/json')
+        
+    except Exception as e:
+        logger.error(f"Error in create_complete_announcement_package: {e}")
         return jsonify({"error": str(e)}), 500
 
 # Thread-safe model loading

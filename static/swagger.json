@@ -747,6 +747,363 @@
           }
         }
       }
+    },
+
+    "/api/announcement/suggestions": {
+      "post": {
+        "summary": "Get Announcement Suggestions",
+        "description": "Get suggestions for announcement structure and content based on type and audience",
+        "tags": ["Announcement Management"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementSuggestionsRequest"
+              },
+              "example": {
+                "announcement_type": "Policy Update",
+                "target_audience": "Faculty"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suggestions generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context": {
+      "get": {
+        "summary": "Get Announcement Context",
+        "description": "Get current announcement context history from database for continuity",
+        "tags": ["Announcement Management"],
+        "responses": {
+          "200": {
+            "description": "Context retrieved successfully from database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementContextResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context/clear": {
+      "post": {
+        "summary": "Clear Announcement Context",
+        "description": "Clear the announcement context history from database",
+        "tags": ["Announcement Management"],
+        "responses": {
+          "200": {
+            "description": "Context cleared successfully from database",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextClearResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context/by-type/{announcement_type}": {
+      "get": {
+        "summary": "Get Announcements by Type",
+        "description": "Get announcements filtered by type from database",
+        "tags": ["Announcement Management"],
+        "parameters": [
+          {
+            "name": "announcement_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Type of announcement to filter by"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Maximum number of announcements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Announcements retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementsByTypeResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context/by-audience/{target_audience}": {
+      "get": {
+        "summary": "Get Announcements by Audience",
+        "description": "Get announcements filtered by target audience from database",
+        "tags": ["Announcement Management"],
+        "parameters": [
+          {
+            "name": "target_audience",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Target audience to filter by"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Maximum number of announcements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Announcements retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementsByAudienceResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context/stats": {
+      "get": {
+        "summary": "Get Announcement Statistics",
+        "description": "Get comprehensive statistics about announcements from database",
+        "tags": ["Announcement Management"],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementStatsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/context/delete/{announcement_id}": {
+      "delete": {
+        "summary": "Delete Specific Announcement",
+        "description": "Delete a specific announcement from database (soft delete)",
+        "tags": ["Announcement Management"],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the announcement to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Announcement deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Announcement not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/create": {
+      "post": {
+        "summary": "Create Enhanced Announcement",
+        "description": "Create an enhanced announcement with improved title and professional message body using AI",
+        "tags": ["Announcement Management"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteAnnouncementRequest"
+              },
+              "example": {
+                "title": "PTM Meeting",
+                "message_body": "Parent Teacher Meeting scheduled for next week",
+                "announcement_type": "PTM/Meetings",
+                "target_audience": "Family - Primary Wing",
+                "tone": "Professional"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complete announcement package created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementCreationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1577,6 +1934,439 @@
             }
           }
         }
+      },
+
+      "EnhancedAnnouncement": {
+        "type": "object",
+        "properties": {
+          "enhanced_title": {
+            "type": "string",
+            "description": "Enhanced, professional title"
+          },
+          "enhanced_message": {
+            "type": "string",
+            "description": "Enhanced, professional message body"
+          },
+          "key_highlights": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Key points from the announcement"
+          },
+          "call_to_action": {
+            "type": "string",
+            "description": "Clear action expected from audience"
+          },
+          "context_connections": {
+            "type": "string",
+            "description": "How this relates to previous announcements"
+          },
+          "tone_analysis": {
+            "type": "string",
+            "description": "Analysis of the professional tone used"
+          },
+          "estimated_reading_time": {
+            "type": "string",
+            "description": "Estimated reading time for the audience"
+          },
+          "accessibility_notes": {
+            "type": "string",
+            "description": "Notes for accessibility considerations"
+          }
+        }
+      },
+      "AnnouncementSuggestionsRequest": {
+        "type": "object",
+        "required": ["announcement_type", "target_audience"],
+        "properties": {
+          "announcement_type": {
+            "type": "string",
+            "description": "Type of announcement for suggestions",
+            "example": "Policy Update"
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Target audience for suggestions",
+            "example": "Faculty"
+          }
+        }
+      },
+      "AnnouncementSuggestions": {
+        "type": "object",
+        "properties": {
+          "title_suggestions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Exactly 3 suggested title approaches",
+            "maxItems": 3,
+            "minItems": 3
+          },
+          "message_body_suggestions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Exactly 3 suggested message body approaches",
+            "maxItems": 3,
+            "minItems": 3
+          },
+          "tone_suggestions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Exactly 3 suggested tone approaches",
+            "maxItems": 3,
+            "minItems": 3
+          },
+          "context_considerations": {
+            "type": "string",
+            "description": "How to reference previous announcements"
+          },
+          "audience_specific_notes": {
+            "type": "string",
+            "description": "Tailored recommendations for audience"
+          }
+        }
+      },
+      "AnnouncementSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "suggestions": {
+            "$ref": "#/components/schemas/AnnouncementSuggestions"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "announcement_type": {"type": "string"},
+              "target_audience": {"type": "string"},
+              "generated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "AnnouncementContextResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "context_summary": {
+            "type": "string",
+            "description": "Summary of recent announcements from database"
+          },
+          "context_count": {
+            "type": "integer",
+            "description": "Number of announcements in database"
+          },
+          "recent_announcements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "type": {"type": "string"},
+                "original_title": {"type": "string"},
+                "enhanced_title": {"type": "string"},
+                "enhanced_message": {"type": "string"},
+                "target_audience": {"type": "string"},
+                "tone": {"type": "string"},
+                "context_connections": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_announcements": {"type": "integer"},
+              "by_type": {
+                "type": "object",
+                "additionalProperties": {"type": "integer"}
+              },
+              "by_audience": {
+                "type": "object",
+                "additionalProperties": {"type": "integer"}
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "ContextClearResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "result": {
+            "type": "object",
+            "properties": {
+              "message": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "cleared_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "AnnouncementsByTypeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "announcement_type": {
+            "type": "string",
+            "description": "The type that was filtered"
+          },
+          "announcements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "type": {"type": "string"},
+                "original_title": {"type": "string"},
+                "enhanced_title": {"type": "string"},
+                "enhanced_message": {"type": "string"},
+                "target_audience": {"type": "string"},
+                "tone": {"type": "string"},
+                "context_connections": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of announcements returned"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "AnnouncementsByAudienceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "The audience that was filtered"
+          },
+          "announcements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "type": {"type": "string"},
+                "original_title": {"type": "string"},
+                "enhanced_title": {"type": "string"},
+                "enhanced_message": {"type": "string"},
+                "target_audience": {"type": "string"},
+                "tone": {"type": "string"},
+                "context_connections": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of announcements returned"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "AnnouncementStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_announcements": {
+                "type": "integer",
+                "description": "Total number of active announcements"
+              },
+              "by_type": {
+                "type": "object",
+                "description": "Count of announcements by type",
+                "additionalProperties": {"type": "integer"}
+              },
+              "by_audience": {
+                "type": "object",
+                "description": "Count of announcements by audience",
+                "additionalProperties": {"type": "integer"}
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "AnnouncementDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or failure message"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "deleted_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "CompleteAnnouncementRequest": {
+        "type": "object",
+        "required": ["title", "message_body"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Original announcement title to enhance",
+            "example": "Meeting tomorrow"
+          },
+          "message_body": {
+            "type": "string",
+            "description": "Original announcement message to enhance",
+            "example": "Staff meeting at 2pm in conference room"
+          },
+          "announcement_type": {
+            "type": "string",
+            "description": "Type of announcement",
+            "enum": ["General Notice", "Academic Update", "Events", "Holiday/Closure", "PTM/Meetings"],
+            "default": "General Notice",
+            "example": "PTM/Meetings"
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Target audience for the announcement",
+            "enum": ["All", "Staff Members - Primary Wing", "Staff Members - Secondary Wing", "Teachers - Primary Wing", "Teachers - Secondary Wing", "Family - Primary Wing", "Family - Secondary Wing"],
+            "default": "All",
+            "example": "Teachers - Primary Wing"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Desired tone for the announcement",
+            "default": "Professional",
+            "example": "Professional"
+          }
+        }
+      },
+      "AnnouncementCreationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "description": "Numbered title and message pairs (title1, message1, title2, message2, title3, message3)"
+              },
+              "example": {
+                "title1": "PTM Meeting",
+                "message1": "Dear Parents, Parent Teacher Meeting scheduled for next week. Please mark your calendars and ensure your presence for discussing your child's progress."
+              }
+            },
+            "description": "Three different announcement options, each with numbered title and message keys",
+            "minItems": 3,
+            "maxItems": 3
+          }
+        }
       }
     }
   },
@@ -1596,6 +2386,10 @@
     {
       "name": "Curriculum Assistant",
       "description": "Endpoints for lesson planning, standards mapping, and resource curation"
+    },
+    {
+      "name": "Announcement Management",
+      "description": "Endpoints for creating enhanced announcements with professional tone and context management"
     }
   ]
 } 

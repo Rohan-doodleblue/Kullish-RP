@@ -2085,6 +2085,196 @@
           }
         }
       }
+    },
+    "/api/llm-usage": {
+      "get": {
+        "summary": "Get LLM Usage Summary",
+        "description": "Get comprehensive LLM usage statistics including daily, monthly, and total usage data",
+        "tags": ["LLM Usage Tracking"],
+        "responses": {
+          "200": {
+            "description": "LLM usage summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMUsageSummaryResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/llm-usage/daily/{date}": {
+      "get": {
+        "summary": "Get Daily LLM Usage",
+        "description": "Get detailed LLM usage statistics for a specific date",
+        "tags": ["LLM Usage Tracking"],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "description": "Date in YYYY-MM-DD format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daily usage data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMDailyUsageResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found for the specified date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/llm-usage/monthly/{month}": {
+      "get": {
+        "summary": "Get Monthly LLM Usage",
+        "description": "Get detailed LLM usage statistics for a specific month",
+        "tags": ["LLM Usage Tracking"],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            },
+            "description": "Month in YYYY-MM format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly usage data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMMonthlyUsageResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found for the specified month",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/llm-usage/trends": {
+      "get": {
+        "summary": "Get LLM Usage Trends",
+        "description": "Get usage trends and analytics for LLM consumption patterns",
+        "tags": ["LLM Usage Tracking"],
+        "responses": {
+          "200": {
+            "description": "Usage trends retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMUsageTrendsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/llm-usage/insights": {
+      "get": {
+        "summary": "Get LLM Usage Insights",
+        "description": "Get AI-generated insights and recommendations based on usage patterns",
+        "tags": ["LLM Usage Tracking"],
+        "responses": {
+          "200": {
+            "description": "Usage insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMUsageInsightsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4075,6 +4265,438 @@
             }
           }
         }
+      },
+      "LLMUsageSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              },
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when data was retrieved"
+              },
+              "tracking_active": {
+                "type": "boolean",
+                "description": "Whether LLM usage tracking is active"
+              }
+            }
+          },
+          "usage_summary": {
+            "type": "object",
+            "properties": {
+              "current_day": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Current date in YYYY-MM-DD format"
+                  },
+                  "text_requests": {
+                    "type": "integer",
+                    "description": "Number of text generation requests"
+                  },
+                  "image_requests": {
+                    "type": "integer",
+                    "description": "Number of image generation requests"
+                  },
+                  "tokens_used": {
+                    "type": "integer",
+                    "description": "Total tokens used"
+                  },
+                  "cost_usd": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Total cost in USD"
+                  },
+                  "tokens_remaining": {
+                    "type": "integer",
+                    "description": "Tokens remaining for the day"
+                  },
+                  "requests_by_type": {
+                    "type": "object",
+                    "description": "Breakdown of requests by type",
+                    "additionalProperties": {"type": "integer"}
+                  }
+                }
+              },
+              "current_month": {
+                "type": "object",
+                "properties": {
+                  "month": {
+                    "type": "string",
+                    "description": "Current month in YYYY-MM format"
+                  },
+                  "text_requests": {
+                    "type": "integer",
+                    "description": "Number of text generation requests"
+                  },
+                  "image_requests": {
+                    "type": "integer",
+                    "description": "Number of image generation requests"
+                  },
+                  "tokens_used": {
+                    "type": "integer",
+                    "description": "Total tokens used"
+                  },
+                  "cost_usd": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Total cost in USD"
+                  }
+                }
+              },
+              "total_stats": {
+                "type": "object",
+                "properties": {
+                  "total_text_requests": {
+                    "type": "integer",
+                    "description": "Total text requests across all time"
+                  },
+                  "total_image_requests": {
+                    "type": "integer",
+                    "description": "Total image requests across all time"
+                  },
+                  "total_tokens_used": {
+                    "type": "integer",
+                    "description": "Total tokens used across all time"
+                  },
+                  "total_cost_usd": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Total cost in USD across all time"
+                  },
+                  "first_usage_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Date of first usage"
+                  },
+                  "last_usage_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "Date of last usage"
+                  }
+                }
+              },
+              "estimated_monthly_cost": {
+                "type": "number",
+                "format": "float",
+                "description": "Estimated monthly cost based on current usage patterns"
+              },
+              "usage_trends": {
+                "type": "object",
+                "properties": {
+                  "daily_averages": {
+                    "type": "object",
+                    "description": "Average daily usage statistics",
+                    "additionalProperties": {"type": "number"}
+                  },
+                  "peak_usage_days": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "description": "Days with highest usage"
+                  },
+                  "cost_trends": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "date": {"type": "string", "format": "date"},
+                        "cost": {"type": "number", "format": "float"}
+                      }
+                    },
+                    "description": "Cost trends over time"
+                  }
+                }
+              },
+              "usage_insights": {
+                "type": "object",
+                "properties": {
+                  "most_used_feature": {
+                    "type": "string",
+                    "description": "Most frequently used feature"
+                  },
+                  "peak_usage_time": {
+                    "type": "string",
+                    "description": "Peak usage time of day"
+                  },
+                  "cost_efficiency": {
+                    "type": "string",
+                    "description": "Cost efficiency rating"
+                  },
+                  "usage_growth": {
+                    "type": "string",
+                    "description": "Usage growth trend"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LLMDailyUsageResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Requested date"
+          },
+          "usage_data": {
+            "type": "object",
+            "properties": {
+              "text_requests": {
+                "type": "integer",
+                "description": "Number of text generation requests"
+              },
+              "image_requests": {
+                "type": "integer",
+                "description": "Number of image generation requests"
+              },
+              "tokens_used": {
+                "type": "integer",
+                "description": "Total tokens used"
+              },
+              "cost_usd": {
+                "type": "number",
+                "format": "float",
+                "description": "Total cost in USD"
+              },
+              "requests_by_type": {
+                "type": "object",
+                "description": "Breakdown of requests by type",
+                "additionalProperties": {"type": "integer"}
+              },
+              "peak_hour": {
+                "type": "string",
+                "description": "Hour with highest usage (HH:MM format)"
+              },
+              "requests_timeline": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "hour": {"type": "string"},
+                    "requests": {"type": "integer"}
+                  }
+                },
+                "description": "Hourly breakdown of requests"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "LLMMonthlyUsageResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "month": {
+            "type": "string",
+            "description": "Requested month in YYYY-MM format"
+          },
+          "usage_data": {
+            "type": "object",
+            "properties": {
+              "text_requests": {
+                "type": "integer",
+                "description": "Number of text generation requests"
+              },
+              "image_requests": {
+                "type": "integer",
+                "description": "Number of image generation requests"
+              },
+              "tokens_used": {
+                "type": "integer",
+                "description": "Total tokens used"
+              },
+              "cost_usd": {
+                "type": "number",
+                "format": "float",
+                "description": "Total cost in USD"
+              },
+              "avg_daily_requests": {
+                "type": "number",
+                "format": "float",
+                "description": "Average daily requests"
+              },
+              "peak_day": {
+                "type": "string",
+                "format": "date",
+                "description": "Day with highest usage"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "LLMUsageTrendsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "trends": {
+            "type": "object",
+            "properties": {
+              "daily_averages": {
+                "type": "object",
+                "description": "Average daily usage by day of week",
+                "additionalProperties": {"type": "number"}
+              },
+              "peak_usage_days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {"type": "string", "format": "date"},
+                    "usage": {"type": "number", "format": "float"}
+                  }
+                },
+                "description": "Days with highest usage"
+              },
+              "cost_trends": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {"type": "string", "format": "date"},
+                    "cost": {"type": "number", "format": "float"}
+                  }
+                },
+                "description": "Cost trends over time"
+              },
+              "feature_usage": {
+                "type": "object",
+                "description": "Usage breakdown by feature type",
+                "additionalProperties": {"type": "integer"}
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "LLMUsageInsightsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "insights": {
+            "type": "object",
+            "properties": {
+              "most_used_feature": {
+                "type": "string",
+                "description": "Most frequently used feature"
+              },
+              "peak_usage_time": {
+                "type": "string",
+                "description": "Peak usage time of day"
+              },
+              "cost_efficiency": {
+                "type": "string",
+                "description": "Cost efficiency rating"
+              },
+              "usage_growth": {
+                "type": "string",
+                "description": "Usage growth trend"
+              },
+              "recommendations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "AI-generated recommendations for optimization"
+              },
+              "cost_projections": {
+                "type": "object",
+                "properties": {
+                  "next_month": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Projected cost for next month"
+                  },
+                  "next_quarter": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "Projected cost for next quarter"
+                  }
+                }
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -4106,6 +4728,10 @@
     {
       "name": "Message Enhancement",
       "description": "Endpoints for enhancing message bodies with AI-powered suggestions and context management"
+    },
+    {
+      "name": "LLM Usage Tracking",
+      "description": "Endpoints for tracking and analyzing LLM usage statistics, costs, and trends"
     }
   ]
 } 

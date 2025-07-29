@@ -143,9 +143,10 @@ class AssessmentGenerator:
             content = response.choices[0].message.content
             questions = json.loads(content)
             
-            # Track token usage
+            # Track LLM usage for multiple choice questions generation
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "multiple_choice_generation")
             
             return questions
             
@@ -182,9 +183,10 @@ class AssessmentGenerator:
             content = response.choices[0].message.content
             essay_data = json.loads(content)
             
-            # Track token usage
+            # Track LLM usage for essay prompt generation
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "essay_prompt_generation")
             
             return essay_data
             
@@ -282,9 +284,10 @@ class CurriculumAssistant:
             content = response.choices[0].message.content
             lesson_plan = json.loads(content)
             
-            # Track token usage
+            # Track LLM usage for lesson plan generation
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "lesson_plan_generation")
             
             return lesson_plan
             
@@ -352,9 +355,10 @@ class CurriculumAssistant:
             content = response.choices[0].message.content
             standards_map = json.loads(content)
             
-            # Track token usage
+            # Track LLM usage for curriculum standards mapping
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "curriculum_standards_mapping")
             
             return standards_map
             
@@ -833,9 +837,10 @@ class AnnouncementGenerator:
                     context_connections=None
                 )
             
-            # Track token usage
+            # Track LLM usage for announcement creation
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "announcement_creation")
             
             return enhanced_announcement
             
@@ -889,9 +894,10 @@ class AnnouncementGenerator:
             content = response.choices[0].message.content
             suggestions = json.loads(content)
             
-            # Track token usage
+            # Track LLM usage for announcement suggestions
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(tokens_used, estimated_cost, "announcement_suggestions")
             
             return suggestions
             
@@ -2666,6 +2672,12 @@ def enhance_title():
             style_preference=style_preference
         )
         
+        # Track LLM usage for title enhancement
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_title) + sum(len(title["title"]) for title in enhanced_titles["enhanced_titles"]) + 200  # Add buffer for prompt
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "title_enhancement")
+        
         # Extract just the titles as a simple array
         title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
         
@@ -2723,6 +2735,12 @@ def regenerate_titles():
             style_preference=style_preference,
             exclude_previous=exclude_previous
         )
+        
+        # Track LLM usage for title regeneration
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_title) + sum(len(title["title"]) for title in enhanced_titles["enhanced_titles"]) + 250  # Add buffer for regeneration prompt
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "title_regeneration")
         
         # Extract just the titles as a simple array
         title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
@@ -2977,6 +2995,12 @@ def enhance_message():
             tone=tone
         )
         
+        # Track LLM usage for message enhancement
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 300  # Add buffer for prompt
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "message_enhancement")
+        
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
         
@@ -3036,6 +3060,12 @@ def regenerate_messages():
             tone=tone,
             exclude_previous=exclude_previous
         )
+        
+        # Track LLM usage for message regeneration
+        # Estimate tokens used (rough calculation based on input + output)
+        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 350  # Add buffer for regeneration prompt
+        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+        track_llm_text_usage(estimated_tokens, estimated_cost, "message_regeneration")
         
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
@@ -3245,6 +3275,198 @@ def delete_message_enhancement(enhancement_id: int):
         
     except Exception as e:
         logger.error(f"Error in delete_message_enhancement: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# Database-based LLM Usage Tracking
+# Using database_manager.py for all LLM usage tracking operations
+
+def track_llm_text_usage(tokens_used: int, cost_usd: float, request_type: str = "text_generation"):
+    """Track text generation usage in database"""
+    try:
+        success = db_manager.add_llm_text_usage(tokens_used, cost_usd, request_type)
+        if success:
+            logger.info(f"LLM text usage tracked: {tokens_used} tokens, ${cost_usd:.4f}")
+        else:
+            logger.error("Failed to track LLM text usage in database")
+        return success
+    except Exception as e:
+        logger.error(f"Error tracking LLM text usage: {e}")
+        return False
+
+def track_llm_image_usage(cost_usd: float, request_type: str = "image_generation"):
+    """Track image generation usage in database"""
+    try:
+        success = db_manager.add_llm_image_usage(cost_usd, request_type)
+        if success:
+            logger.info(f"LLM image usage tracked: ${cost_usd:.4f}")
+        else:
+            logger.error("Failed to track LLM image usage in database")
+        return success
+    except Exception as e:
+        logger.error(f"Error tracking LLM image usage: {e}")
+        return False
+
+# LLM Usage Analytics API Endpoints
+
+@app.route('/api/llm-usage', methods=['GET'])
+def get_llm_usage_summary():
+    """Get comprehensive LLM usage summary and analytics"""
+    try:
+        usage_summary = db_manager.get_llm_usage_summary()
+        
+        return jsonify({
+            "success": True,
+            "usage_summary": usage_summary,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "tracking_active": True,
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting LLM usage summary: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/llm-usage/daily/<date>', methods=['GET'])
+def get_daily_llm_usage(date: str):
+    """Get detailed LLM usage for a specific date"""
+    try:
+        # Validate date format
+        try:
+            datetime.strptime(date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+        
+        daily_usage = db_manager.get_llm_daily_usage(date)
+        
+        if not daily_usage:
+            return jsonify({
+                "success": False,
+                "message": f"No usage data found for {date}",
+                "date": date
+            }), 404
+        
+        return jsonify({
+            "success": True,
+            "date": date,
+            "daily_usage": daily_usage,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting daily LLM usage: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/llm-usage/monthly/<month>', methods=['GET'])
+def get_monthly_llm_usage(month: str):
+    """Get detailed LLM usage for a specific month"""
+    try:
+        # Validate month format
+        try:
+            datetime.strptime(month, '%Y-%m')
+        except ValueError:
+            return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+        
+        monthly_usage = db_manager.get_llm_monthly_usage(month)
+        
+        if not monthly_usage:
+            return jsonify({
+                "success": False,
+                "message": f"No usage data found for {month}",
+                "month": month
+            }), 404
+        
+        return jsonify({
+            "success": True,
+            "month": month,
+            "monthly_usage": monthly_usage,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting monthly LLM usage: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/llm-usage/trends', methods=['GET'])
+def get_llm_usage_trends():
+    """Get usage trends and analytics"""
+    try:
+        days = request.args.get('days', 30, type=int)
+        
+        # Validate days parameter
+        if days < 7 or days > 90:
+            return jsonify({"error": "Days parameter must be between 7 and 90"}), 400
+        
+        # Get trends from database
+        usage_summary = db_manager.get_llm_usage_summary()
+        trends = usage_summary.get("usage_trends", {})
+        
+        # Filter cost trends to requested days
+        if trends.get("cost_trends"):
+            cutoff_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+            filtered_trends = [
+                trend for trend in trends["cost_trends"] 
+                if trend["date"] >= cutoff_date
+            ]
+            trends["cost_trends"] = filtered_trends
+        
+        return jsonify({
+            "success": True,
+            "trends": trends,
+            "analysis_period_days": days,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "data_points": len(trends["cost_trends"])
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting LLM usage trends: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/llm-usage/insights', methods=['GET'])
+def get_llm_usage_insights():
+    """Get AI-generated insights about usage patterns"""
+    try:
+        # Get insights from database
+        usage_summary = db_manager.get_llm_usage_summary()
+        insights = usage_summary.get("usage_insights", {})
+        trends = usage_summary.get("usage_trends", {})
+        
+        additional_insights = {}
+        
+        if trends.get("daily_averages"):
+            avg_cost = trends["daily_averages"]["avg_cost_per_day"]
+            if avg_cost > 0.10:
+                additional_insights["cost_alert"] = "High daily cost detected"
+            elif avg_cost < 0.01:
+                additional_insights["cost_alert"] = "Very low daily cost"
+        
+        if trends.get("peak_usage_days"):
+            peak_day, peak_cost = trends["peak_usage_days"][0]
+            additional_insights["peak_day"] = {
+                "date": peak_day,
+                "cost": peak_cost,
+                "note": "Highest cost day"
+            }
+        
+        return jsonify({
+            "success": True,
+            "insights": insights,
+            "additional_insights": additional_insights,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "insights_generated": True
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting LLM usage insights: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

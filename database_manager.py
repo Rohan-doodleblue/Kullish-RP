@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import threading
-from sqlalchemy import create_engine, text, Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy import create_engine, text, Column, Integer, String, Text, DateTime, Boolean, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import pg8000
@@ -81,6 +81,62 @@ class MessageEnhancementContext(Base):
     domain = Column(String(100), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+class LLMUsageDaily(Base):
+    """SQLAlchemy model for daily LLM usage tracking"""
+    __tablename__ = 'llm_usage_daily'
+    
+    id = Column(Integer, primary_key=True)
+    date = Column(String(10), nullable=False, unique=True)  # YYYY-MM-DD format
+    text_requests = Column(Integer, default=0)
+    image_requests = Column(Integer, default=0)
+    tokens_used = Column(Integer, default=0)
+    cost_usd = Column(Float, default=0.0)
+    requests_by_type = Column(Text)  # JSON string of request types
+    peak_hour = Column(String(5))  # HH:MM format
+    requests_timeline = Column(Text)  # JSON array of request timeline
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class LLMUsageMonthly(Base):
+    """SQLAlchemy model for monthly LLM usage tracking"""
+    __tablename__ = 'llm_usage_monthly'
+    
+    id = Column(Integer, primary_key=True)
+    month = Column(String(7), nullable=False, unique=True)  # YYYY-MM format
+    text_requests = Column(Integer, default=0)
+    image_requests = Column(Integer, default=0)
+    tokens_used = Column(Integer, default=0)
+    cost_usd = Column(Float, default=0.0)
+    avg_daily_requests = Column(Float, default=0.0)
+    peak_day = Column(String(10))  # YYYY-MM-DD format
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class LLMUsageTotal(Base):
+    """SQLAlchemy model for total LLM usage statistics"""
+    __tablename__ = 'llm_usage_total'
+    
+    id = Column(Integer, primary_key=True)
+    total_text_requests = Column(Integer, default=0)
+    total_image_requests = Column(Integer, default=0)
+    total_tokens_used = Column(Integer, default=0)
+    total_cost_usd = Column(Float, default=0.0)
+    first_usage_date = Column(String(10))  # YYYY-MM-DD format
+    last_usage_date = Column(String(10))  # YYYY-MM-DD format
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class LLMUsageTrends(Base):
+    """SQLAlchemy model for LLM usage trends and analytics"""
+    __tablename__ = 'llm_usage_trends'
+    
+    id = Column(Integer, primary_key=True)
+    trend_type = Column(String(50), nullable=False)  # 'daily_averages', 'peak_usage_days', 'cost_trends'
+    trend_data = Column(Text, nullable=False)  # JSON string of trend data
+    analysis_date = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class DatabaseManager:
     """Manage PostgreSQL database operations for announcement context"""
@@ -908,6 +964,558 @@ class DatabaseManager:
                 session.rollback()
                 session.close()
             return False
+
+    # LLM Usage Tracking Methods
+    
+    def add_llm_text_usage(self, tokens_used: int, cost_usd: float, request_type: str = "text_generation") -> bool:
+        """Add text generation usage to database"""
+        try:
+            session = self.SessionLocal()
+            today = datetime.now().strftime('%Y-%m-%d')
+            month = datetime.now().strftime('%Y-%m')
+            now = datetime.now().isoformat()
+            
+            # Update or create daily usage
+            daily_usage = session.query(LLMUsageDaily)\
+                .filter(LLMUsageDaily.date == today)\
+                .first()
+            
+            if daily_usage:
+                daily_usage.text_requests += 1
+                daily_usage.tokens_used += tokens_used
+                daily_usage.cost_usd += cost_usd
+                daily_usage.updated_at = datetime.utcnow()
+                
+                # Update requests by type
+                try:
+                    requests_by_type = json.loads(daily_usage.requests_by_type) if daily_usage.requests_by_type else {}
+                except:
+                    requests_by_type = {}
+                
+                requests_by_type[request_type] = requests_by_type.get(request_type, 0) + 1
+                daily_usage.requests_by_type = json.dumps(requests_by_type)
+                
+                # Update timeline
+                try:
+                    timeline = json.loads(daily_usage.requests_timeline) if daily_usage.requests_timeline else []
+                except:
+                    timeline = []
+                
+                timeline.append({
+                    "timestamp": now,
+                    "type": "text",
+                    "tokens": tokens_used,
+                    "cost": cost_usd,
+                    "request_type": request_type
+                })
+                daily_usage.requests_timeline = json.dumps(timeline)
+                
+            else:
+                # Create new daily usage record
+                daily_usage = LLMUsageDaily(
+                    date=today,
+                    text_requests=1,
+                    image_requests=0,
+                    tokens_used=tokens_used,
+                    cost_usd=cost_usd,
+                    requests_by_type=json.dumps({request_type: 1}),
+                    requests_timeline=json.dumps([{
+                        "timestamp": now,
+                        "type": "text",
+                        "tokens": tokens_used,
+                        "cost": cost_usd,
+                        "request_type": request_type
+                    }])
+                )
+                session.add(daily_usage)
+            
+            # Update or create monthly usage
+            monthly_usage = session.query(LLMUsageMonthly)\
+                .filter(LLMUsageMonthly.month == month)\
+                .first()
+            
+            if monthly_usage:
+                monthly_usage.text_requests += 1
+                monthly_usage.tokens_used += tokens_used
+                monthly_usage.cost_usd += cost_usd
+                monthly_usage.updated_at = datetime.utcnow()
+            else:
+                monthly_usage = LLMUsageMonthly(
+                    month=month,
+                    text_requests=1,
+                    image_requests=0,
+                    tokens_used=tokens_used,
+                    cost_usd=cost_usd
+                )
+                session.add(monthly_usage)
+            
+            # Update total stats
+            total_stats = session.query(LLMUsageTotal).first()
+            if total_stats:
+                total_stats.total_text_requests += 1
+                total_stats.total_tokens_used += tokens_used
+                total_stats.total_cost_usd += cost_usd
+                total_stats.last_usage_date = today
+                total_stats.updated_at = datetime.utcnow()
+                
+                if not total_stats.first_usage_date:
+                    total_stats.first_usage_date = today
+            else:
+                total_stats = LLMUsageTotal(
+                    total_text_requests=1,
+                    total_image_requests=0,
+                    total_tokens_used=tokens_used,
+                    total_cost_usd=cost_usd,
+                    first_usage_date=today,
+                    last_usage_date=today
+                )
+                session.add(total_stats)
+            
+            session.commit()
+            session.close()
+            
+            logger.info(f"Added LLM text usage: {tokens_used} tokens, ${cost_usd:.4f}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add LLM text usage: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def add_llm_image_usage(self, cost_usd: float, request_type: str = "image_generation") -> bool:
+        """Add image generation usage to database"""
+        try:
+            session = self.SessionLocal()
+            today = datetime.now().strftime('%Y-%m-%d')
+            month = datetime.now().strftime('%Y-%m')
+            now = datetime.now().isoformat()
+            
+            # Update or create daily usage
+            daily_usage = session.query(LLMUsageDaily)\
+                .filter(LLMUsageDaily.date == today)\
+                .first()
+            
+            if daily_usage:
+                daily_usage.image_requests += 1
+                daily_usage.cost_usd += cost_usd
+                daily_usage.updated_at = datetime.utcnow()
+                
+                # Update requests by type
+                try:
+                    requests_by_type = json.loads(daily_usage.requests_by_type) if daily_usage.requests_by_type else {}
+                except:
+                    requests_by_type = {}
+                
+                requests_by_type[request_type] = requests_by_type.get(request_type, 0) + 1
+                daily_usage.requests_by_type = json.dumps(requests_by_type)
+                
+                # Update timeline
+                try:
+                    timeline = json.loads(daily_usage.requests_timeline) if daily_usage.requests_timeline else []
+                except:
+                    timeline = []
+                
+                timeline.append({
+                    "timestamp": now,
+                    "type": "image",
+                    "tokens": 0,
+                    "cost": cost_usd,
+                    "request_type": request_type
+                })
+                daily_usage.requests_timeline = json.dumps(timeline)
+                
+            else:
+                # Create new daily usage record
+                daily_usage = LLMUsageDaily(
+                    date=today,
+                    text_requests=0,
+                    image_requests=1,
+                    tokens_used=0,
+                    cost_usd=cost_usd,
+                    requests_by_type=json.dumps({request_type: 1}),
+                    requests_timeline=json.dumps([{
+                        "timestamp": now,
+                        "type": "image",
+                        "tokens": 0,
+                        "cost": cost_usd,
+                        "request_type": request_type
+                    }])
+                )
+                session.add(daily_usage)
+            
+            # Update or create monthly usage
+            monthly_usage = session.query(LLMUsageMonthly)\
+                .filter(LLMUsageMonthly.month == month)\
+                .first()
+            
+            if monthly_usage:
+                monthly_usage.image_requests += 1
+                monthly_usage.cost_usd += cost_usd
+                monthly_usage.updated_at = datetime.utcnow()
+            else:
+                monthly_usage = LLMUsageMonthly(
+                    month=month,
+                    text_requests=0,
+                    image_requests=1,
+                    tokens_used=0,
+                    cost_usd=cost_usd
+                )
+                session.add(monthly_usage)
+            
+            # Update total stats
+            total_stats = session.query(LLMUsageTotal).first()
+            if total_stats:
+                total_stats.total_image_requests += 1
+                total_stats.total_cost_usd += cost_usd
+                total_stats.last_usage_date = today
+                total_stats.updated_at = datetime.utcnow()
+                
+                if not total_stats.first_usage_date:
+                    total_stats.first_usage_date = today
+            else:
+                total_stats = LLMUsageTotal(
+                    total_text_requests=0,
+                    total_image_requests=1,
+                    total_tokens_used=0,
+                    total_cost_usd=cost_usd,
+                    first_usage_date=today,
+                    last_usage_date=today
+                )
+                session.add(total_stats)
+            
+            session.commit()
+            session.close()
+            
+            logger.info(f"Added LLM image usage: ${cost_usd:.4f}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add LLM image usage: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def get_llm_usage_summary(self) -> Dict[str, Any]:
+        """Get comprehensive LLM usage summary from database"""
+        try:
+            session = self.SessionLocal()
+            today = datetime.now().strftime('%Y-%m-%d')
+            month = datetime.now().strftime('%Y-%m')
+            
+            # Get today's usage
+            daily_usage = session.query(LLMUsageDaily)\
+                .filter(LLMUsageDaily.date == today)\
+                .first()
+            
+            today_data = {
+                "text_requests": daily_usage.text_requests if daily_usage else 0,
+                "image_requests": daily_usage.image_requests if daily_usage else 0,
+                "tokens_used": daily_usage.tokens_used if daily_usage else 0,
+                "cost_usd": daily_usage.cost_usd if daily_usage else 0.0,
+                "requests_by_type": {}
+            }
+            
+            if daily_usage and daily_usage.requests_by_type:
+                try:
+                    today_data["requests_by_type"] = json.loads(daily_usage.requests_by_type)
+                except:
+                    today_data["requests_by_type"] = {}
+            
+            # Calculate remaining tokens (assuming 25,000 daily limit)
+            daily_limit = 25000
+            today_data["tokens_remaining"] = max(0, daily_limit - today_data["tokens_used"])
+            
+            # Get this month's usage
+            monthly_usage = session.query(LLMUsageMonthly)\
+                .filter(LLMUsageMonthly.month == month)\
+                .first()
+            
+            month_data = {
+                "text_requests": monthly_usage.text_requests if monthly_usage else 0,
+                "image_requests": monthly_usage.image_requests if monthly_usage else 0,
+                "tokens_used": monthly_usage.tokens_used if monthly_usage else 0,
+                "cost_usd": monthly_usage.cost_usd if monthly_usage else 0.0
+            }
+            
+            # Get total stats
+            total_stats = session.query(LLMUsageTotal).first()
+            total_data = {
+                "total_text_requests": total_stats.total_text_requests if total_stats else 0,
+                "total_image_requests": total_stats.total_image_requests if total_stats else 0,
+                "total_tokens_used": total_stats.total_tokens_used if total_stats else 0,
+                "total_cost_usd": total_stats.total_cost_usd if total_stats else 0.0,
+                "first_usage_date": total_stats.first_usage_date if total_stats else None,
+                "last_usage_date": total_stats.last_usage_date if total_stats else None
+            }
+            
+            # Get usage trends
+            trends_data = self._get_llm_usage_trends(session)
+            
+            # Calculate estimated monthly cost
+            estimated_monthly_cost = self._estimate_monthly_cost(session)
+            
+            # Generate usage insights
+            usage_insights = self._generate_llm_usage_insights(session)
+            
+            session.close()
+            
+            return {
+                "current_day": {
+                    "date": today,
+                    **today_data
+                },
+                "current_month": {
+                    "month": month,
+                    **month_data
+                },
+                "total_stats": total_data,
+                "usage_trends": trends_data,
+                "estimated_monthly_cost": estimated_monthly_cost,
+                "usage_insights": usage_insights
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get LLM usage summary: {e}")
+            if 'session' in locals():
+                session.close()
+            return {"error": str(e)}
+    
+    def get_llm_daily_usage(self, date: str) -> Dict[str, Any]:
+        """Get daily LLM usage for a specific date"""
+        try:
+            session = self.SessionLocal()
+            
+            daily_usage = session.query(LLMUsageDaily)\
+                .filter(LLMUsageDaily.date == date)\
+                .first()
+            
+            if not daily_usage:
+                session.close()
+                return None
+            
+            result = {
+                "text_requests": daily_usage.text_requests,
+                "image_requests": daily_usage.image_requests,
+                "tokens_used": daily_usage.tokens_used,
+                "cost_usd": daily_usage.cost_usd,
+                "peak_hour": daily_usage.peak_hour,
+                "requests_by_type": {},
+                "requests_timeline": []
+            }
+            
+            if daily_usage.requests_by_type:
+                try:
+                    result["requests_by_type"] = json.loads(daily_usage.requests_by_type)
+                except:
+                    result["requests_by_type"] = {}
+            
+            if daily_usage.requests_timeline:
+                try:
+                    result["requests_timeline"] = json.loads(daily_usage.requests_timeline)
+                except:
+                    result["requests_timeline"] = []
+            
+            session.close()
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to get daily LLM usage: {e}")
+            if 'session' in locals():
+                session.close()
+            return None
+    
+    def get_llm_monthly_usage(self, month: str) -> Dict[str, Any]:
+        """Get monthly LLM usage for a specific month"""
+        try:
+            session = self.SessionLocal()
+            
+            monthly_usage = session.query(LLMUsageMonthly)\
+                .filter(LLMUsageMonthly.month == month)\
+                .first()
+            
+            if not monthly_usage:
+                session.close()
+                return None
+            
+            result = {
+                "text_requests": monthly_usage.text_requests,
+                "image_requests": monthly_usage.image_requests,
+                "tokens_used": monthly_usage.tokens_used,
+                "cost_usd": monthly_usage.cost_usd,
+                "avg_daily_requests": monthly_usage.avg_daily_requests,
+                "peak_day": monthly_usage.peak_day
+            }
+            
+            session.close()
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to get monthly LLM usage: {e}")
+            if 'session' in locals():
+                session.close()
+            return None
+    
+    def _get_llm_usage_trends(self, session) -> Dict[str, Any]:
+        """Get LLM usage trends from database"""
+        try:
+            # Calculate daily averages
+            daily_records = session.query(LLMUsageDaily).all()
+            
+            if not daily_records:
+                return {
+                    "daily_averages": {},
+                    "peak_usage_days": [],
+                    "cost_trends": []
+                }
+            
+            total_tokens = sum(record.tokens_used for record in daily_records)
+            total_cost = sum(record.cost_usd for record in daily_records)
+            total_requests = sum(record.text_requests + record.image_requests for record in daily_records)
+            total_days = len(daily_records)
+            
+            daily_averages = {
+                "avg_tokens_per_day": total_tokens / total_days if total_days > 0 else 0,
+                "avg_cost_per_day": total_cost / total_days if total_days > 0 else 0,
+                "avg_requests_per_day": total_requests / total_days if total_days > 0 else 0
+            }
+            
+            # Find peak usage days (top 5 by cost)
+            daily_costs = [(record.date, record.cost_usd) for record in daily_records]
+            daily_costs.sort(key=lambda x: x[1], reverse=True)
+            peak_usage_days = daily_costs[:5]
+            
+            # Get cost trends (last 30 days)
+            thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+            recent_records = [
+                record for record in daily_records 
+                if record.date >= thirty_days_ago
+            ]
+            
+            cost_trends = []
+            for record in recent_records:
+                cost_trends.append({
+                    "date": record.date,
+                    "cost": record.cost_usd,
+                    "tokens": record.tokens_used,
+                    "requests": record.text_requests + record.image_requests
+                })
+            
+            cost_trends.sort(key=lambda x: x["date"])
+            
+            return {
+                "daily_averages": daily_averages,
+                "peak_usage_days": peak_usage_days,
+                "cost_trends": cost_trends
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get LLM usage trends: {e}")
+            return {
+                "daily_averages": {},
+                "peak_usage_days": [],
+                "cost_trends": []
+            }
+    
+    def _estimate_monthly_cost(self, session) -> float:
+        """Estimate monthly cost based on current trends"""
+        try:
+            daily_records = session.query(LLMUsageDaily).all()
+            
+            if not daily_records:
+                return 0.0
+            
+            total_cost = sum(record.cost_usd for record in daily_records)
+            total_days = len(daily_records)
+            
+            if total_days > 0:
+                avg_daily_cost = total_cost / total_days
+                days_in_month = 30
+                return avg_daily_cost * days_in_month
+            
+            return 0.0
+            
+        except Exception as e:
+            logger.error(f"Failed to estimate monthly cost: {e}")
+            return 0.0
+    
+    def _generate_llm_usage_insights(self, session) -> Dict[str, Any]:
+        """Generate insights about LLM usage patterns"""
+        try:
+            insights = {
+                "peak_usage_time": "Not enough data",
+                "most_used_feature": "Not enough data",
+                "cost_efficiency": "Good",
+                "usage_growth": "Stable"
+            }
+            
+            daily_records = session.query(LLMUsageDaily).all()
+            
+            if len(daily_records) < 2:
+                return insights
+            
+            # Analyze peak usage time
+            all_requests = []
+            for record in daily_records:
+                if record.requests_timeline:
+                    try:
+                        timeline = json.loads(record.requests_timeline)
+                        all_requests.extend(timeline)
+                    except:
+                        continue
+            
+            if all_requests:
+                # Group by hour
+                hourly_counts = {}
+                for request in all_requests:
+                    try:
+                        hour = datetime.fromisoformat(request["timestamp"]).hour
+                        hourly_counts[hour] = hourly_counts.get(hour, 0) + 1
+                    except:
+                        continue
+                
+                if hourly_counts:
+                    peak_hour = max(hourly_counts, key=hourly_counts.get)
+                    insights["peak_usage_time"] = f"{peak_hour:02d}:00"
+            
+            # Analyze most used feature
+            total_text = sum(record.text_requests for record in daily_records)
+            total_image = sum(record.image_requests for record in daily_records)
+            
+            if total_text > total_image:
+                insights["most_used_feature"] = "Text Generation"
+            elif total_image > total_text:
+                insights["most_used_feature"] = "Image Generation"
+            else:
+                insights["most_used_feature"] = "Balanced Usage"
+            
+            # Analyze cost efficiency
+            total_cost = sum(record.cost_usd for record in daily_records)
+            total_requests = total_text + total_image
+            
+            if total_requests > 0:
+                cost_per_request = total_cost / total_requests
+                if cost_per_request < 0.01:
+                    insights["cost_efficiency"] = "Excellent"
+                elif cost_per_request < 0.05:
+                    insights["cost_efficiency"] = "Good"
+                elif cost_per_request < 0.10:
+                    insights["cost_efficiency"] = "Moderate"
+                else:
+                    insights["cost_efficiency"] = "High"
+            
+            return insights
+            
+        except Exception as e:
+            logger.error(f"Failed to generate LLM usage insights: {e}")
+            return {
+                "peak_usage_time": "Error",
+                "most_used_feature": "Error",
+                "cost_efficiency": "Error",
+                "usage_growth": "Error"
+            }
 
 # Create global instance
 db_manager = DatabaseManager() 

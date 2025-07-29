@@ -917,6 +917,422 @@ from database_manager import db_manager
 # Initialize announcement generator
 announcement_generator = AnnouncementGenerator()
 
+class TitleEnhancer:
+    """Enhanced title generation with context management and unique suggestions"""
+    
+    def __init__(self):
+        # Test database connection on initialization
+        if not db_manager.test_connection():
+            logger.warning("Database connection failed. Context will be limited.")
+    
+    def add_title_to_context(self, original_title: str, enhanced_titles: List[str], 
+                           context_type: str = "title_enhancement", 
+                           domain: str = "general"):
+        """Add enhanced titles to database context for better continuity"""
+        try:
+            success = db_manager.add_title_context(
+                original_title=original_title,
+                enhanced_titles=enhanced_titles,
+                context_type=context_type,
+                domain=domain
+            )
+            if success:
+                logger.info(f"Added title enhancement to context: {original_title[:30]}...")
+            else:
+                logger.error("Failed to add title enhancement to context")
+        except Exception as e:
+            logger.error(f"Error adding title to context: {e}")
+    
+    def get_title_context_summary(self, domain: str = "general") -> str:
+        """Get a summary of recent title enhancements for context from database"""
+        try:
+            return db_manager.get_title_context_summary(domain=domain, limit=3)
+        except Exception as e:
+            logger.error(f"Error getting title context summary: {e}")
+            return "No previous title enhancements."
+    
+    def enhance_title(self, original_title: str, context_type: str = "general", 
+                     domain: str = "general", max_length: int = 50, 
+                     style_preference: str = "professional") -> Dict:
+        """Create enhanced title suggestions with context awareness"""
+        
+        # Validate context type
+        valid_context_types = [
+            "general", "academic", "business", "creative", "technical", 
+            "marketing", "educational", "professional", "casual"
+        ]
+        if context_type not in valid_context_types:
+            context_type = "general"
+        
+        # Validate style preference
+        valid_styles = [
+            "professional", "creative", "concise", "descriptive", 
+            "attention-grabbing", "formal", "casual", "technical"
+        ]
+        if style_preference not in valid_styles:
+            style_preference = "professional"
+        
+        # Build context-aware prompt
+        context_summary = self.get_title_context_summary(domain)
+        
+        prompt = f"""
+        Create THREE UNIQUE and DISTINCTLY DIFFERENT enhanced title suggestions for the given original title.
+        
+        CONTEXT:
+        {context_summary}
+        
+        INPUT INFORMATION:
+        - Original Title: "{original_title}"
+        - Context Type: {context_type}
+        - Domain: {domain}
+        - Style Preference: {style_preference}
+        - Maximum Length: {max_length} characters
+        
+        REQUIREMENTS:
+        1. CREATE 3 COMPLETELY DIFFERENT APPROACHES: Each suggestion should have a unique style, tone, and approach
+        2. CHARACTER LIMIT: Maximum {max_length} characters per title
+        3. CONTEXT AWARENESS: Consider recent title enhancements to avoid repetition and maintain consistency
+        4. STYLE VARIETY: Provide different stylistic approaches while maintaining the core message
+        5. DOMAIN APPROPRIATENESS: Ensure titles are suitable for the specified domain
+        
+        STYLE GUIDELINES:
+        - Professional: Clear, concise, business-appropriate
+        - Creative: Engaging, imaginative, attention-grabbing
+        - Concise: Short, direct, to-the-point
+        - Descriptive: Detailed, informative, comprehensive
+        - Attention-grabbing: Bold, compelling, memorable
+        - Formal: Structured, academic, official
+        - Casual: Friendly, approachable, conversational
+        - Technical: Precise, specialized, industry-specific
+        
+        Return the response as JSON with the following structure:
+        {{
+            "original_title": "{original_title}",
+            "enhanced_titles": [
+                {{
+                    "title": "First enhanced title suggestion (max {max_length} chars)",
+                    "style": "professional",
+                    "approach": "Brief description of the approach used",
+                    "character_count": 25
+                }},
+                {{
+                    "title": "Second enhanced title suggestion (max {max_length} chars)",
+                    "style": "creative", 
+                    "approach": "Brief description of the approach used",
+                    "character_count": 30
+                }},
+                {{
+                    "title": "Third enhanced title suggestion (max {max_length} chars)",
+                    "style": "concise",
+                    "approach": "Brief description of the approach used", 
+                    "character_count": 20
+                }}
+            ],
+            "metadata": {{
+                "context_type": "{context_type}",
+                "domain": "{domain}",
+                "style_preference": "{style_preference}",
+                "max_length": {max_length}
+            }}
+        }}
+        
+        IMPORTANT: 
+        - Each title must be exactly {max_length} characters or less
+        - Provide 3 distinctly different approaches
+        - Avoid repetition with recent context
+        - Maintain the core meaning while enhancing clarity and impact
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.8
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_titles = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic structure
+                enhanced_titles = {
+                    "original_title": original_title,
+                    "enhanced_titles": [
+                        {
+                            "title": f"Enhanced: {original_title[:max_length-10]}",
+                            "style": "professional",
+                            "approach": "Direct enhancement with clarity",
+                            "character_count": len(f"Enhanced: {original_title[:max_length-10]}")
+                        },
+                        {
+                            "title": f"Updated: {original_title[:max_length-9]}",
+                            "style": "concise",
+                            "approach": "Brief and to-the-point",
+                            "character_count": len(f"Updated: {original_title[:max_length-9]}")
+                        },
+                        {
+                            "title": f"Improved: {original_title[:max_length-10]}",
+                            "style": "descriptive",
+                            "approach": "More detailed and informative",
+                            "character_count": len(f"Improved: {original_title[:max_length-10]}")
+                        }
+                    ],
+                    "metadata": {
+                        "context_type": context_type,
+                        "domain": domain,
+                        "style_preference": style_preference,
+                        "max_length": max_length
+                    }
+                }
+            
+            # Add to database context
+            enhanced_title_list = [title["title"] for title in enhanced_titles["enhanced_titles"]]
+            self.add_title_to_context(
+                original_title=original_title,
+                enhanced_titles=enhanced_title_list,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return enhanced_titles
+            
+        except Exception as e:
+            logger.error(f"Error enhancing title: {e}")
+            raise Exception(f"Failed to enhance title: {str(e)}")
+    
+    def regenerate_titles(self, original_title: str, context_type: str = "general", 
+                         domain: str = "general", max_length: int = 50, 
+                         style_preference: str = "professional", 
+                         exclude_previous: bool = True) -> Dict:
+        """Regenerate title suggestions with context awareness to avoid repetition"""
+        
+        # Get context to understand what was previously generated
+        context_summary = self.get_title_context_summary(domain)
+        
+        prompt = f"""
+        Create THREE NEW and DIFFERENT enhanced title suggestions for the given original title.
+        IMPORTANT: These should be COMPLETELY DIFFERENT from any previous suggestions.
+        
+        PREVIOUS CONTEXT (AVOID THESE APPROACHES):
+        {context_summary}
+        
+        INPUT INFORMATION:
+        - Original Title: "{original_title}"
+        - Context Type: {context_type}
+        - Domain: {domain}
+        - Style Preference: {style_preference}
+        - Maximum Length: {max_length} characters
+        - Exclude Previous: {exclude_previous}
+        
+        REQUIREMENTS:
+        1. CREATE 3 COMPLETELY NEW APPROACHES: Different from any previous suggestions
+        2. CHARACTER LIMIT: Maximum {max_length} characters per title
+        3. AVOID REPETITION: Do not use similar approaches from previous context
+        4. STYLE VARIETY: Provide different stylistic approaches
+        5. FRESH PERSPECTIVE: Offer new angles and interpretations
+        
+        Return the response as JSON with the following structure:
+        {{
+            "original_title": "{original_title}",
+            "enhanced_titles": [
+                {{
+                    "title": "First new enhanced title (max {max_length} chars)",
+                    "style": "creative",
+                    "approach": "New approach description",
+                    "character_count": 25,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }},
+                {{
+                    "title": "Second new enhanced title (max {max_length} chars)",
+                    "style": "technical",
+                    "approach": "New approach description", 
+                    "character_count": 30,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }},
+                {{
+                    "title": "Third new enhanced title (max {max_length} chars)",
+                    "style": "attention-grabbing",
+                    "approach": "New approach description",
+                    "character_count": 20,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }}
+            ],
+            "metadata": {{
+                "context_type": "{context_type}",
+                "domain": "{domain}",
+                "style_preference": "{style_preference}",
+                "max_length": {max_length},
+                "regeneration": true
+            }}
+        }}
+        
+        IMPORTANT: 
+        - Each title must be exactly {max_length} characters or less
+        - Provide 3 completely new approaches
+        - Avoid any similarity to previous suggestions
+        - Maintain the core meaning while offering fresh perspectives
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.9
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_titles = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic structure with different approaches
+                enhanced_titles = {
+                    "original_title": original_title,
+                    "enhanced_titles": [
+                        {
+                            "title": f"New: {original_title[:max_length-5]}",
+                            "style": "creative",
+                            "approach": "Fresh creative approach",
+                            "character_count": len(f"New: {original_title[:max_length-5]}"),
+                            "uniqueness": "Uses 'New' prefix for freshness"
+                        },
+                        {
+                            "title": f"Revamped: {original_title[:max_length-9]}",
+                            "style": "attention-grabbing",
+                            "approach": "Bold and compelling",
+                            "character_count": len(f"Revamped: {original_title[:max_length-9]}"),
+                            "uniqueness": "Uses 'Revamped' for impact"
+                        },
+                        {
+                            "title": f"Optimized: {original_title[:max_length-11]}",
+                            "style": "technical",
+                            "approach": "Technical optimization focus",
+                            "character_count": len(f"Optimized: {original_title[:max_length-11]}"),
+                            "uniqueness": "Uses 'Optimized' for technical appeal"
+                        }
+                    ],
+                    "metadata": {
+                        "context_type": context_type,
+                        "domain": domain,
+                        "style_preference": style_preference,
+                        "max_length": max_length,
+                        "regeneration": True
+                    }
+                }
+            
+            # Add to database context
+            enhanced_title_list = [title["title"] for title in enhanced_titles["enhanced_titles"]]
+            self.add_title_to_context(
+                original_title=original_title,
+                enhanced_titles=enhanced_title_list,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return enhanced_titles
+            
+        except Exception as e:
+            logger.error(f"Error regenerating titles: {e}")
+            raise Exception(f"Failed to regenerate titles: {str(e)}")
+    
+    def get_title_suggestions_by_domain(self, domain: str) -> Dict:
+        """Get title enhancement suggestions based on domain"""
+        
+        prompt = f"""
+        Provide focused suggestions for creating effective titles in the {domain} domain.
+        
+        Return the response as JSON with the following structure:
+        {{
+            "domain": "{domain}",
+            "title_patterns": [
+                "First effective title pattern for {domain}",
+                "Second title structure approach",
+                "Third title format recommendation"
+            ],
+            "style_recommendations": [
+                "First style recommendation for {domain} titles",
+                "Second tone suggestion",
+                "Third approach recommendation"
+            ],
+            "common_elements": [
+                "First common element in {domain} titles",
+                "Second typical component",
+                "Third standard feature"
+            ],
+            "avoidance_tips": [
+                "First thing to avoid in {domain} titles",
+                "Second common mistake",
+                "Third pitfall to watch out for"
+            ],
+            "domain_specific_notes": "Tailored recommendations for the {domain} domain"
+        }}
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.6
+            )
+            
+            content = response.choices[0].message.content
+            suggestions = json.loads(content)
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Error getting title suggestions by domain: {e}")
+            raise Exception(f"Failed to get title suggestions: {str(e)}")
+    
+    def clear_title_context(self, domain: str = None):
+        """Clear the title context history from database"""
+        try:
+            success = db_manager.clear_title_context(domain)
+            if success:
+                return {"message": f"Title context history cleared successfully for domain: {domain or 'all'}"}
+            else:
+                return {"message": "Failed to clear title context history"}
+        except Exception as e:
+            logger.error(f"Error clearing title context: {e}")
+            return {"message": f"Error clearing title context: {str(e)}"}
+
+# Initialize title enhancer
+title_enhancer = TitleEnhancer()
+
 # API Routes
 
 @app.route('/')
@@ -1022,6 +1438,14 @@ def grade_multiple_choice():
         if len(questions) != len(student_answers):
             return jsonify({"error": "Number of questions and answers must match"}), 400
         
+        # Check token limit for grading
+        estimated_tokens = len(questions) * 50  # Rough estimate per question
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         grading_result = AssessmentGrader.grade_multiple_choice(questions, student_answers)
         
         return jsonify({
@@ -1079,6 +1503,14 @@ def create_complete_assessment():
         subject = data.get('subject', 'General')
         topic = data.get('topic', 'General Knowledge')
         assessment_type = data.get('type', 'multiple_choice')  # 'multiple_choice' or 'essay'
+        
+        # Check token limit for assessment creation
+        estimated_tokens = 500  # Rough estimate for assessment generation
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
         
         if assessment_type == 'multiple_choice':
             # Generate questions
@@ -1397,6 +1829,14 @@ def get_announcement_suggestions():
 def get_announcement_context():
     """Get current announcement context history from database"""
     try:
+        # Check token limit for context retrieval
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         context_summary = announcement_generator.get_context_summary()
         recent_announcements = db_manager.get_recent_announcements(limit=5)
         stats = db_manager.get_announcement_stats()
@@ -1421,6 +1861,14 @@ def get_announcement_context():
 def clear_announcement_context():
     """Clear the announcement context history from database"""
     try:
+        # Check token limit for context clearing
+        estimated_tokens = 50  # Rough estimate for context clearing
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         result = announcement_generator.clear_context()
         
         return jsonify({
@@ -1441,6 +1889,15 @@ def get_announcements_by_type(announcement_type: str):
     """Get announcements by type from database"""
     try:
         limit = request.args.get('limit', 5, type=int)
+        
+        # Check token limit for context retrieval by type
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         announcements = db_manager.get_announcements_by_type(announcement_type, limit)
         
         return jsonify({
@@ -1463,6 +1920,15 @@ def get_announcements_by_audience(target_audience: str):
     """Get announcements by target audience from database"""
     try:
         limit = request.args.get('limit', 5, type=int)
+        
+        # Check token limit for context retrieval by audience
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         announcements = db_manager.get_announcements_by_audience(target_audience, limit)
         
         return jsonify({
@@ -1484,6 +1950,14 @@ def get_announcements_by_audience(target_audience: str):
 def get_announcement_stats():
     """Get announcement statistics from database"""
     try:
+        # Check token limit for stats retrieval
+        estimated_tokens = 50  # Rough estimate for stats retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         stats = db_manager.get_announcement_stats()
         
         return jsonify({
@@ -1503,6 +1977,14 @@ def get_announcement_stats():
 def delete_announcement(announcement_id: int):
     """Delete specific announcement from database"""
     try:
+        # Check token limit for deletion
+        estimated_tokens = 50  # Rough estimate for deletion
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
         success = db_manager.delete_announcement(announcement_id)
         
         if success:
@@ -1661,6 +2143,305 @@ def predict_anomaly():
     except Exception as e:
         logger.error(f"Error in predict_anomaly: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/title/enhance', methods=['POST'])
+def enhance_title():
+    """Enhance a title with 3 unique suggestions"""
+    try:
+        data = request.get_json()
+        original_title = data.get('original_title')
+        context_type = data.get('context_type', 'general')
+        domain = data.get('domain', 'general')
+        max_length = data.get('max_length', 50)
+        style_preference = data.get('style_preference', 'professional')
+        
+        # Validate required parameters
+        if not original_title:
+            return jsonify({
+                "error": "Missing required parameter: original_title"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 10 or max_length > 200:
+            return jsonify({
+                "error": "max_length must be between 10 and 200 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 400  # Rough estimate for title enhancement
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_titles = title_enhancer.enhance_title(
+            original_title=original_title,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference
+        )
+        
+        # Extract just the titles as a simple array
+        title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
+        
+        return jsonify({
+            "success": True,
+            "titles": title_array
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in enhance_title: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/regenerate', methods=['POST'])
+def regenerate_titles():
+    """Regenerate title suggestions with context awareness"""
+    try:
+        data = request.get_json()
+        original_title = data.get('original_title')
+        context_type = data.get('context_type', 'general')
+        domain = data.get('domain', 'general')
+        max_length = data.get('max_length', 50)
+        style_preference = data.get('style_preference', 'professional')
+        exclude_previous = data.get('exclude_previous', True)
+        
+        # Validate required parameters
+        if not original_title:
+            return jsonify({
+                "error": "Missing required parameter: original_title"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 10 or max_length > 200:
+            return jsonify({
+                "error": "max_length must be between 10 and 200 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 450  # Rough estimate for title regeneration
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_titles = title_enhancer.regenerate_titles(
+            original_title=original_title,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference,
+            exclude_previous=exclude_previous
+        )
+        
+        # Extract just the titles as a simple array
+        title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
+        
+        return jsonify({
+            "success": True,
+            "titles": title_array
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in regenerate_titles: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/suggestions/<domain>', methods=['GET'])
+def get_title_suggestions_by_domain(domain: str):
+    """Get title enhancement suggestions for a specific domain"""
+    try:
+        # Check token limit
+        estimated_tokens = 300  # Rough estimate for domain suggestions
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        suggestions = title_enhancer.get_title_suggestions_by_domain(domain)
+        
+        return jsonify({
+            "success": True,
+            "suggestions": suggestions,
+            "metadata": {
+                "domain": domain,
+                "generated_at": datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_title_suggestions_by_domain: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/context', methods=['GET'])
+def get_title_context():
+    """Get current title enhancement context history from database"""
+    try:
+        domain = request.args.get('domain', 'general')
+        limit = request.args.get('limit', 5, type=int)
+        
+        # Check token limit for context retrieval
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        context_summary = title_enhancer.get_title_context_summary(domain)
+        recent_titles = db_manager.get_recent_title_enhancements(domain, limit)
+        stats = db_manager.get_title_enhancement_stats(domain)
+        
+        return jsonify({
+            "success": True,
+            "context_summary": context_summary,
+            "domain": domain,
+            "recent_enhancements": recent_titles,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_title_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/context/clear', methods=['POST'])
+def clear_title_context():
+    """Clear the title enhancement context history from database"""
+    try:
+        data = request.get_json() or {}
+        domain = data.get('domain')
+        
+        # Check token limit for context clearing
+        estimated_tokens = 50  # Rough estimate for context clearing
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        result = title_enhancer.clear_title_context(domain)
+        
+        return jsonify({
+            "success": True,
+            "result": result,
+            "metadata": {
+                "cleared_at": datetime.now().isoformat(),
+                "domain": domain,
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in clear_title_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/context/by-type/<context_type>', methods=['GET'])
+def get_title_enhancements_by_type(context_type: str):
+    """Get title enhancements by context type from database"""
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        domain = request.args.get('domain', 'general')
+        
+        # Check token limit for context retrieval by type
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhancements = db_manager.get_title_enhancements_by_type(context_type, domain, limit)
+        
+        return jsonify({
+            "success": True,
+            "context_type": context_type,
+            "domain": domain,
+            "enhancements": enhancements,
+            "count": len(enhancements),
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_title_enhancements_by_type: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/context/stats', methods=['GET'])
+def get_title_enhancement_stats():
+    """Get title enhancement statistics from database"""
+    try:
+        domain = request.args.get('domain', 'general')
+        
+        # Check token limit for stats retrieval
+        estimated_tokens = 50  # Rough estimate for stats retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        stats = db_manager.get_title_enhancement_stats(domain)
+        
+        return jsonify({
+            "success": True,
+            "domain": domain,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_title_enhancement_stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/title/context/delete/<int:enhancement_id>', methods=['DELETE'])
+def delete_title_enhancement(enhancement_id: int):
+    """Delete specific title enhancement from database"""
+    try:
+        # Check token limit for deletion
+        estimated_tokens = 50  # Rough estimate for deletion
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        success = db_manager.delete_title_enhancement(enhancement_id)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Title enhancement {enhancement_id} deleted successfully",
+                "metadata": {
+                    "deleted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Failed to delete title enhancement {enhancement_id}",
+                "metadata": {
+                    "attempted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            }), 404
+        
+    except Exception as e:
+        logger.error(f"Error in delete_title_enhancement: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

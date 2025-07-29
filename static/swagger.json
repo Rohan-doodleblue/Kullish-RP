@@ -1058,7 +1058,8 @@
                 "target_audience": "Family - Primary Wing",
                 "tone": "Professional",
                 "max_title_length": 25,
-                "max_message_length": 500
+                "max_message_length": 500,
+                "include_suggestions": false
               }
             }
           }
@@ -1076,6 +1077,494 @@
           },
           "400": {
             "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/enhance": {
+      "post": {
+        "summary": "Enhance Title",
+        "description": "Generate 3 unique enhanced title suggestions with context awareness",
+        "tags": ["Title Enhancement"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TitleEnhancementRequest"
+              },
+              "example": {
+                "original_title": "Meeting tomorrow",
+                "context_type": "business",
+                "domain": "professional",
+                "max_length": 40,
+                "style_preference": "professional"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Title enhanced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleEnhancementResponse"
+                },
+                "example": {
+                  "success": true,
+                  "titles": [
+                    "Upcoming collaboration session",
+                    "Tomorrow's strategic meet-up",
+                    "Quick meet tomorrow"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/regenerate": {
+      "post": {
+        "summary": "Regenerate Title Suggestions",
+        "description": "Generate new title suggestions while avoiding previous ones",
+        "tags": ["Title Enhancement"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TitleRegenerationRequest"
+              },
+              "example": {
+                "original_title": "Meeting tomorrow",
+                "context_type": "business",
+                "domain": "professional",
+                "max_length": 40,
+                "style_preference": "creative",
+                "exclude_previous": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Titles regenerated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleEnhancementResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/suggestions/{domain}": {
+      "get": {
+        "summary": "Get Domain Suggestions",
+        "description": "Get title enhancement suggestions for a specific domain",
+        "tags": ["Title Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Domain for suggestions (e.g., business, technical, academic)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain suggestions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/context": {
+      "get": {
+        "summary": "Get Title Context",
+        "description": "Get current title enhancement context history from database",
+        "tags": ["Title Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Number of recent enhancements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Context retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleContextResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/context/clear": {
+      "post": {
+        "summary": "Clear Title Context",
+        "description": "Clear the title enhancement context history from database",
+        "tags": ["Title Enhancement"],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "Domain to clear (optional, clears all if not specified)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Context cleared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextClearResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/context/by-type/{context_type}": {
+      "get": {
+        "summary": "Get Title Enhancements by Type",
+        "description": "Get title enhancements by context type from database",
+        "tags": ["Title Enhancement"],
+        "parameters": [
+          {
+            "name": "context_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Context type to filter by"
+          },
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Maximum number of enhancements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enhancements retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleEnhancementsByTypeResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/context/stats": {
+      "get": {
+        "summary": "Get Title Enhancement Statistics",
+        "description": "Get title enhancement statistics from database",
+        "tags": ["Title Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleEnhancementStatsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/title/context/delete/{enhancement_id}": {
+      "delete": {
+        "summary": "Delete Title Enhancement",
+        "description": "Delete specific title enhancement from database (soft delete)",
+        "tags": ["Title Enhancement"],
+        "parameters": [
+          {
+            "name": "enhancement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the enhancement to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enhancement deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TitleEnhancementDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Enhancement not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -2357,6 +2846,12 @@
             "minimum": 50,
             "maximum": 1000,
             "example": 400
+          },
+          "include_suggestions": {
+            "type": "boolean",
+            "description": "Whether to include suggestions for future announcements",
+            "default": false,
+            "example": false
           }
         }
       },
@@ -2385,6 +2880,347 @@
             "maxItems": 3
           }
         }
+      },
+      "TitleEnhancementRequest": {
+        "type": "object",
+        "required": ["original_title"],
+        "properties": {
+          "original_title": {
+            "type": "string",
+            "description": "The title to enhance",
+            "example": "Meeting tomorrow"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Type of context",
+            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
+            "default": "general",
+            "example": "business"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for context",
+            "default": "general",
+            "example": "professional"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum character length",
+            "minimum": 10,
+            "maximum": 200,
+            "default": 50,
+            "example": 40
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Preferred style",
+            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
+            "default": "professional",
+            "example": "professional"
+          }
+        }
+      },
+      "TitleRegenerationRequest": {
+        "type": "object",
+        "required": ["original_title"],
+        "properties": {
+          "original_title": {
+            "type": "string",
+            "description": "The title to enhance",
+            "example": "Meeting tomorrow"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Type of context",
+            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
+            "default": "general",
+            "example": "business"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for context",
+            "default": "general",
+            "example": "professional"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum character length",
+            "minimum": 10,
+            "maximum": 200,
+            "default": 50,
+            "example": 40
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Preferred style",
+            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
+            "default": "professional",
+            "example": "creative"
+          },
+          "exclude_previous": {
+            "type": "boolean",
+            "description": "Whether to exclude previous suggestions",
+            "default": true,
+            "example": true
+          }
+        }
+      },
+      "TitleEnhancementResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "titles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of 3 enhanced title suggestions",
+            "minItems": 3,
+            "maxItems": 3,
+            "example": [
+              "Upcoming collaboration session",
+              "Tomorrow's strategic meet-up",
+              "Quick meet tomorrow"
+            ]
+          }
+        }
+      },
+      "DomainSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "suggestions": {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "type": "string",
+                "example": "business"
+              },
+              "title_patterns": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Effective title patterns for the domain"
+              },
+              "style_recommendations": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Style recommendations for the domain"
+              },
+              "common_elements": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Common elements in domain titles"
+              },
+              "avoidance_tips": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Things to avoid in domain titles"
+              },
+              "domain_specific_notes": {
+                "type": "string",
+                "description": "Tailored recommendations for the domain"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "domain": {"type": "string"},
+              "generated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "TitleContextResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "context_summary": {
+            "type": "string",
+            "description": "Summary of recent title enhancements"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain filter used"
+          },
+          "recent_enhancements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "original_title": {"type": "string"},
+                "enhanced_titles": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "context_type": {"type": "string"},
+                "domain": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_enhancements": {"type": "integer"},
+              "by_context_type": {
+                "type": "object",
+                "additionalProperties": {"type": "integer"}
+              },
+              "domain": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "TitleEnhancementsByTypeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "context_type": {
+            "type": "string",
+            "description": "The context type that was filtered"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain filter used"
+          },
+          "enhancements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "original_title": {"type": "string"},
+                "enhanced_titles": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "context_type": {"type": "string"},
+                "domain": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of enhancements returned"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "TitleEnhancementStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain filter used"
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_enhancements": {
+                "type": "integer",
+                "description": "Total number of enhancements"
+              },
+              "by_context_type": {
+                "type": "object",
+                "description": "Count of enhancements by context type",
+                "additionalProperties": {"type": "integer"}
+              },
+              "domain": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "TitleEnhancementDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or failure message"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "deleted_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -2408,6 +3244,10 @@
     {
       "name": "Announcement Management",
       "description": "Endpoints for creating enhanced announcements with professional tone and context management"
+    },
+    {
+      "name": "Title Enhancement",
+      "description": "Endpoints for enhancing titles with AI-powered suggestions and context management"
     }
   ]
 } 

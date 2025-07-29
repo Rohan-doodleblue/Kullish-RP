@@ -58,6 +58,18 @@ class AnnouncementContext(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
+class TitleEnhancementContext(Base):
+    """SQLAlchemy model for title enhancement context"""
+    __tablename__ = 'title_enhancement_context'
+    
+    id = Column(Integer, primary_key=True)
+    original_title = Column(String(500), nullable=False)
+    enhanced_titles = Column(Text, nullable=False)  # JSON array of enhanced titles
+    context_type = Column(String(100), nullable=False)
+    domain = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
 class DatabaseManager:
     """Manage PostgreSQL database operations for announcement context"""
     
@@ -373,6 +385,255 @@ class DatabaseManager:
                 
         except Exception as e:
             logger.error(f"Failed to delete announcement {announcement_id}: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+
+    # Title Enhancement Methods
+    
+    def add_title_context(self, original_title: str, enhanced_titles: List[str], 
+                         context_type: str = "title_enhancement", 
+                         domain: str = "general") -> bool:
+        """Add title enhancement context to database"""
+        try:
+            session = self.SessionLocal()
+            
+            # Convert enhanced_titles list to JSON string
+            enhanced_titles_json = json.dumps(enhanced_titles)
+            
+            # Create new title enhancement context
+            title_context = TitleEnhancementContext(
+                original_title=original_title,
+                enhanced_titles=enhanced_titles_json,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            session.add(title_context)
+            session.commit()
+            session.close()
+            
+            logger.info(f"Title enhancement context added successfully for: {original_title[:30]}...")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add title enhancement context: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def get_title_context_summary(self, domain: str = "general", limit: int = 3) -> str:
+        """Get a summary of recent title enhancements for context"""
+        try:
+            session = self.SessionLocal()
+            
+            # Get recent title enhancements for the domain
+            recent_enhancements = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.domain == domain)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .order_by(TitleEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            if not recent_enhancements:
+                session.close()
+                return "No previous title enhancements for this domain."
+            
+            # Build context summary
+            summary_parts = []
+            for enhancement in recent_enhancements:
+                try:
+                    enhanced_titles = json.loads(enhancement.enhanced_titles)
+                    titles_str = ", ".join(enhanced_titles[:2])  # Show first 2 titles
+                    summary_parts.append(f"Original: '{enhancement.original_title}' → Enhanced: {titles_str}")
+                except json.JSONDecodeError:
+                    summary_parts.append(f"Original: '{enhancement.original_title}' → Enhanced titles")
+            
+            session.close()
+            return " | ".join(summary_parts)
+            
+        except Exception as e:
+            logger.error(f"Failed to get title context summary: {e}")
+            if 'session' in locals():
+                session.close()
+            return "No previous title enhancements."
+    
+    def get_recent_title_enhancements(self, domain: str = "general", limit: int = 5) -> List[Dict]:
+        """Get recent title enhancements from database"""
+        try:
+            session = self.SessionLocal()
+            
+            recent_enhancements = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.domain == domain)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .order_by(TitleEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            enhancements = []
+            for enhancement in recent_enhancements:
+                try:
+                    enhanced_titles = json.loads(enhancement.enhanced_titles)
+                except json.JSONDecodeError:
+                    enhanced_titles = []
+                
+                enhancements.append({
+                    "id": enhancement.id,
+                    "original_title": enhancement.original_title,
+                    "enhanced_titles": enhanced_titles,
+                    "context_type": enhancement.context_type,
+                    "domain": enhancement.domain,
+                    "created_at": enhancement.created_at.isoformat()
+                })
+            
+            session.close()
+            return enhancements
+            
+        except Exception as e:
+            logger.error(f"Failed to get recent title enhancements: {e}")
+            if 'session' in locals():
+                session.close()
+            return []
+    
+    def get_title_enhancements_by_type(self, context_type: str, domain: str = "general", limit: int = 5) -> List[Dict]:
+        """Get title enhancements by context type"""
+        try:
+            session = self.SessionLocal()
+            
+            enhancements = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.context_type == context_type)\
+                .filter(TitleEnhancementContext.domain == domain)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .order_by(TitleEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            result = []
+            for enhancement in enhancements:
+                try:
+                    enhanced_titles = json.loads(enhancement.enhanced_titles)
+                except json.JSONDecodeError:
+                    enhanced_titles = []
+                
+                result.append({
+                    "id": enhancement.id,
+                    "original_title": enhancement.original_title,
+                    "enhanced_titles": enhanced_titles,
+                    "context_type": enhancement.context_type,
+                    "domain": enhancement.domain,
+                    "created_at": enhancement.created_at.isoformat()
+                })
+            
+            session.close()
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to get title enhancements by type: {e}")
+            if 'session' in locals():
+                session.close()
+            return []
+    
+    def get_title_enhancement_stats(self, domain: str = "general") -> Dict[str, Any]:
+        """Get title enhancement statistics"""
+        try:
+            session = self.SessionLocal()
+            
+            # Total count
+            total_count = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.domain == domain)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .count()
+            
+            # Count by context type
+            type_counts = {}
+            types = session.query(TitleEnhancementContext.context_type)\
+                .filter(TitleEnhancementContext.domain == domain)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .distinct()\
+                .all()
+            
+            for type_tuple in types:
+                context_type = type_tuple[0]
+                count = session.query(TitleEnhancementContext)\
+                    .filter(TitleEnhancementContext.context_type == context_type)\
+                    .filter(TitleEnhancementContext.domain == domain)\
+                    .filter(TitleEnhancementContext.is_active == True)\
+                    .count()
+                type_counts[context_type] = count
+            
+            session.close()
+            
+            return {
+                "total_enhancements": total_count,
+                "by_context_type": type_counts,
+                "domain": domain
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get title enhancement stats: {e}")
+            if 'session' in locals():
+                session.close()
+            return {
+                "total_enhancements": 0,
+                "by_context_type": {},
+                "domain": domain
+            }
+    
+    def clear_title_context(self, domain: str = None) -> bool:
+        """Clear title enhancement context (soft delete)"""
+        try:
+            session = self.SessionLocal()
+            
+            if domain:
+                # Clear context for specific domain
+                session.query(TitleEnhancementContext)\
+                    .filter(TitleEnhancementContext.domain == domain)\
+                    .filter(TitleEnhancementContext.is_active == True)\
+                    .update({"is_active": False})
+            else:
+                # Clear all title enhancement context
+                session.query(TitleEnhancementContext)\
+                    .filter(TitleEnhancementContext.is_active == True)\
+                    .update({"is_active": False})
+            
+            session.commit()
+            session.close()
+            
+            logger.info(f"Title enhancement context cleared successfully for domain: {domain or 'all'}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear title enhancement context: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def delete_title_enhancement(self, enhancement_id: int) -> bool:
+        """Delete specific title enhancement (soft delete)"""
+        try:
+            session = self.SessionLocal()
+            
+            enhancement = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.id == enhancement_id)\
+                .filter(TitleEnhancementContext.is_active == True)\
+                .first()
+            
+            if enhancement:
+                enhancement.is_active = False
+                session.commit()
+                session.close()
+                logger.info(f"Title enhancement {enhancement_id} deleted successfully")
+                return True
+            else:
+                session.close()
+                logger.warning(f"Title enhancement {enhancement_id} not found")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to delete title enhancement {enhancement_id}: {e}")
             if 'session' in locals():
                 session.rollback()
                 session.close()

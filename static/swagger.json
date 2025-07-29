@@ -1595,6 +1595,496 @@
           }
         }
       }
+    },
+    "/api/message/enhance": {
+      "post": {
+        "summary": "Enhance Message Body",
+        "description": "Generate 3 unique enhanced message body suggestions with context awareness",
+        "tags": ["Message Enhancement"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageEnhancementRequest"
+              },
+              "example": {
+                "original_message": "Meeting tomorrow at 2pm",
+                "context_type": "business",
+                "domain": "professional",
+                "max_length": 500,
+                "style_preference": "professional",
+                "tone": "professional"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message enhanced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnhancementResponse"
+                },
+                "example": {
+                  "success": true,
+                  "messages": {
+                    "message1": "We are pleased to announce an important team meeting scheduled for tomorrow at 2:00 PM. This session will focus on key project updates and strategic planning discussions. All team members are required to attend as we will be covering critical information that impacts our upcoming deliverables and organizational objectives.",
+                    "message2": "Please be advised that a mandatory team meeting has been scheduled for tomorrow at 2:00 PM. This meeting will address essential project milestones, upcoming deadlines, and collaborative opportunities. Your attendance is crucial as we will be discussing matters that directly affect our team's performance and success metrics.",
+                    "message3": "Important Notice: Team meeting tomorrow at 2:00 PM. This comprehensive session will cover project status updates, resource allocation, and strategic initiatives. All team members must attend as we will be reviewing critical information that shapes our organizational direction and operational efficiency."
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/regenerate": {
+      "post": {
+        "summary": "Regenerate Message Body Suggestions",
+        "description": "Generate new message body suggestions while avoiding previous ones",
+        "tags": ["Message Enhancement"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRegenerationRequest"
+              },
+              "example": {
+                "original_message": "Meeting tomorrow at 2pm",
+                "context_type": "business",
+                "domain": "professional",
+                "max_length": 500,
+                "style_preference": "creative",
+                "tone": "professional",
+                "exclude_previous": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages regenerated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnhancementResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/suggestions/{domain}": {
+      "get": {
+        "summary": "Get Domain Message Suggestions",
+        "description": "Get message enhancement suggestions for a specific domain",
+        "tags": ["Message Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Domain for suggestions (e.g., business, technical, academic)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain suggestions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDomainSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/context": {
+      "get": {
+        "summary": "Get Message Context",
+        "description": "Get current message enhancement context history from database",
+        "tags": ["Message Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Number of recent enhancements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Context retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageContextResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/context/clear": {
+      "post": {
+        "summary": "Clear Message Context",
+        "description": "Clear the message enhancement context history from database",
+        "tags": ["Message Enhancement"],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domain": {
+                    "type": "string",
+                    "description": "Domain to clear (optional, clears all if not specified)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Context cleared successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextClearResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/context/by-type/{context_type}": {
+      "get": {
+        "summary": "Get Message Enhancements by Type",
+        "description": "Get message enhancements by context type from database",
+        "tags": ["Message Enhancement"],
+        "parameters": [
+          {
+            "name": "context_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Context type to filter by"
+          },
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5
+            },
+            "description": "Maximum number of enhancements to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enhancements retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnhancementsByTypeResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/context/stats": {
+      "get": {
+        "summary": "Get Message Enhancement Statistics",
+        "description": "Get message enhancement statistics from database",
+        "tags": ["Message Enhancement"],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "general"
+            },
+            "description": "Filter by domain"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnhancementStatsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/message/context/delete/{enhancement_id}": {
+      "delete": {
+        "summary": "Delete Message Enhancement",
+        "description": "Delete specific message enhancement from database (soft delete)",
+        "tags": ["Message Enhancement"],
+        "parameters": [
+          {
+            "name": "enhancement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the enhancement to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enhancement deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageEnhancementDeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Enhancement not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Daily token limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3221,6 +3711,370 @@
             }
           }
         }
+      },
+      "MessageEnhancementRequest": {
+        "type": "object",
+        "required": ["original_message"],
+        "properties": {
+          "original_message": {
+            "type": "string",
+            "description": "The message to enhance",
+            "example": "Meeting tomorrow at 2pm"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Type of context",
+            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
+            "default": "general",
+            "example": "business"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for context",
+            "default": "general",
+            "example": "professional"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum character length",
+            "minimum": 50,
+            "maximum": 2000,
+            "default": 500,
+            "example": 500
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Preferred style",
+            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
+            "default": "professional",
+            "example": "professional"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Desired tone",
+            "enum": ["professional", "friendly", "formal", "casual", "enthusiastic", "serious", "encouraging"],
+            "default": "professional",
+            "example": "professional"
+          }
+        }
+      },
+      "MessageRegenerationRequest": {
+        "type": "object",
+        "required": ["original_message"],
+        "properties": {
+          "original_message": {
+            "type": "string",
+            "description": "The message to enhance",
+            "example": "Meeting tomorrow at 2pm"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Type of context",
+            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
+            "default": "general",
+            "example": "business"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for context",
+            "default": "general",
+            "example": "professional"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum character length",
+            "minimum": 50,
+            "maximum": 2000,
+            "default": 500,
+            "example": 500
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Preferred style",
+            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
+            "default": "professional",
+            "example": "creative"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Desired tone",
+            "enum": ["professional", "friendly", "formal", "casual", "enthusiastic", "serious", "encouraging"],
+            "default": "professional",
+            "example": "professional"
+          },
+          "exclude_previous": {
+            "type": "boolean",
+            "description": "Whether to exclude previous suggestions",
+            "default": true,
+            "example": true
+          }
+        }
+      },
+      "MessageEnhancementResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "messages": {
+            "type": "object",
+            "properties": {
+              "message1": {
+                "type": "string",
+                "description": "First enhanced message suggestion"
+              },
+              "message2": {
+                "type": "string",
+                "description": "Second enhanced message suggestion"
+              },
+              "message3": {
+                "type": "string",
+                "description": "Third enhanced message suggestion"
+              }
+            },
+            "description": "Object containing 3 enhanced message suggestions",
+            "example": {
+              "message1": "We are pleased to announce an important team meeting scheduled for tomorrow at 2:00 PM. This session will focus on key project updates and strategic planning discussions. All team members are required to attend as we will be covering critical information that impacts our upcoming deliverables and organizational objectives.",
+              "message2": "Please be advised that a mandatory team meeting has been scheduled for tomorrow at 2:00 PM. This meeting will address essential project milestones, upcoming deadlines, and collaborative opportunities. Your attendance is crucial as we will be discussing matters that directly affect our team's performance and success metrics.",
+              "message3": "Important Notice: Team meeting tomorrow at 2:00 PM. This comprehensive session will cover project status updates, resource allocation, and strategic initiatives. All team members must attend as we will be reviewing critical information that shapes our organizational direction and operational efficiency."
+            }
+          }
+        }
+      },
+      "MessageDomainSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "suggestions": {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "type": "string",
+                "example": "business"
+              },
+              "message_patterns": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Effective message patterns for the domain"
+              },
+              "style_recommendations": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Style recommendations for the domain"
+              },
+              "common_elements": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Common elements in domain messages"
+              },
+              "avoidance_tips": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Things to avoid in domain messages"
+              },
+              "domain_specific_notes": {
+                "type": "string",
+                "description": "Tailored recommendations for the domain"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "domain": {"type": "string"},
+              "generated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "MessageContextResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "context_summary": {
+            "type": "string",
+            "description": "Summary of recent message enhancements"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain filter used"
+          },
+          "recent_enhancements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "original_message": {"type": "string"},
+                "enhanced_messages": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "context_type": {"type": "string"},
+                "domain": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_enhancements": {"type": "integer"},
+              "by_context_type": {
+                "type": "object",
+                "additionalProperties": {"type": "integer"}
+              },
+              "domain": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "MessageEnhancementsByTypeResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "context_type": {
+            "type": "string",
+            "description": "The context type that was filtered"
+          },
+          "domain": {
+            "type": "string",
+            "description": "The domain filter used"
+          },
+          "enhancements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "integer"},
+                "original_message": {"type": "string"},
+                "enhanced_messages": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "context_type": {"type": "string"},
+                "domain": {"type": "string"},
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of enhancements returned"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "MessageEnhancementStatsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain filter used"
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_enhancements": {
+                "type": "integer",
+                "description": "Total number of enhancements"
+              },
+              "by_context_type": {
+                "type": "object",
+                "description": "Count of enhancements by context type",
+                "additionalProperties": {"type": "integer"}
+              },
+              "domain": {"type": "string"}
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "retrieved_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
+      },
+      "MessageEnhancementDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "description": "Success or failure message"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "deleted_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "database_connected": {
+                "type": "boolean",
+                "description": "Database connection status"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -3248,6 +4102,10 @@
     {
       "name": "Title Enhancement",
       "description": "Endpoints for enhancing titles with AI-powered suggestions and context management"
+    },
+    {
+      "name": "Message Enhancement",
+      "description": "Endpoints for enhancing message bodies with AI-powered suggestions and context management"
     }
   ]
 } 

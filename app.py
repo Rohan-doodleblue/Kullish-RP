@@ -1333,6 +1333,489 @@ class TitleEnhancer:
 # Initialize title enhancer
 title_enhancer = TitleEnhancer()
 
+class MessageBodyEnhancer:
+    """Enhanced message body generation with context management and unique suggestions"""
+    
+    def __init__(self):
+        # Test database connection on initialization
+        if not db_manager.test_connection():
+            logger.warning("Database connection failed. Context will be limited.")
+    
+    def add_message_to_context(self, original_message: str, enhanced_messages: List[str], 
+                             context_type: str = "message_enhancement", 
+                             domain: str = "general"):
+        """Add enhanced messages to database context for better continuity"""
+        try:
+            success = db_manager.add_message_context(
+                original_message=original_message,
+                enhanced_messages=enhanced_messages,
+                context_type=context_type,
+                domain=domain
+            )
+            if success:
+                logger.info(f"Added message enhancement to context: {original_message[:30]}...")
+            else:
+                logger.error("Failed to add message enhancement to context")
+        except Exception as e:
+            logger.error(f"Error adding message to context: {e}")
+    
+    def get_message_context_summary(self, domain: str = "general") -> str:
+        """Get a summary of recent message enhancements for context from database"""
+        try:
+            return db_manager.get_message_context_summary(domain=domain, limit=3)
+        except Exception as e:
+            logger.error(f"Error getting message context summary: {e}")
+            return "No previous message enhancements."
+    
+    def enhance_message(self, original_message: str, context_type: str = "general", 
+                       domain: str = "general", max_length: int = 500, 
+                       style_preference: str = "professional", 
+                       tone: str = "professional") -> Dict:
+        """Create enhanced message suggestions with context awareness"""
+        
+        # Validate context type
+        valid_context_types = [
+            "general", "academic", "business", "creative", "technical", 
+            "marketing", "educational", "professional", "casual", "formal"
+        ]
+        if context_type not in valid_context_types:
+            context_type = "general"
+        
+        # Validate style preference
+        valid_styles = [
+            "professional", "creative", "concise", "descriptive", 
+            "attention-grabbing", "formal", "casual", "technical", "persuasive"
+        ]
+        if style_preference not in valid_styles:
+            style_preference = "professional"
+        
+        # Validate tone
+        valid_tones = [
+            "professional", "friendly", "formal", "casual", "enthusiastic",
+            "serious", "encouraging", "informative", "persuasive", "neutral"
+        ]
+        if tone not in valid_tones:
+            tone = "professional"
+        
+        # Build context-aware prompt
+        context_summary = self.get_message_context_summary(domain)
+        
+        prompt = f"""
+        Create THREE UNIQUE and DISTINCTLY DIFFERENT enhanced message suggestions for the given original message.
+        
+        CONTEXT:
+        {context_summary}
+        
+        INPUT INFORMATION:
+        - Original Message: "{original_message}"
+        - Context Type: {context_type}
+        - Domain: {domain}
+        - Style Preference: {style_preference}
+        - Tone: {tone}
+        - Maximum Length: {max_length} characters
+        
+        REQUIREMENTS:
+        1. CREATE 3 COMPLETELY DIFFERENT APPROACHES: Each suggestion should have a unique style, tone, and approach
+        2. CHARACTER LIMIT: Maximum {max_length} characters per message - USE MOST OF THE AVAILABLE CHARACTERS
+        3. CONTEXT AWARENESS: Consider recent message enhancements to avoid repetition and maintain consistency
+        4. STYLE VARIETY: Provide different stylistic approaches while maintaining the core message
+        5. DOMAIN APPROPRIATENESS: Ensure messages are suitable for the specified domain
+        6. TONE CONSISTENCY: Maintain the specified tone throughout each message
+        7. DETAILED CONTENT: Make messages comprehensive and informative, not brief or minimal
+        8. ENGAGING LANGUAGE: Use compelling and descriptive language to make messages more impactful
+        
+        STYLE GUIDELINES:
+        - Professional: Clear, structured, business-appropriate language with detailed explanations
+        - Creative: Engaging, imaginative, attention-grabbing content with vivid descriptions
+        - Concise: Direct, to-the-point communication while still being comprehensive
+        - Descriptive: Detailed, informative, comprehensive explanations with rich context
+        - Attention-grabbing: Bold, compelling, memorable content with strong emotional appeal
+        - Formal: Structured, academic, official language with thorough explanations
+        - Casual: Friendly, approachable, conversational tone with warm details
+        - Technical: Precise, specialized, industry-specific language with detailed specifications
+        - Persuasive: Compelling, convincing, action-oriented content with strong arguments
+        
+        TONE GUIDELINES:
+        - Professional: Respectful, authoritative, business-like with comprehensive details
+        - Friendly: Warm, approachable, personable with encouraging details
+        - Formal: Official, structured, respectful with thorough explanations
+        - Casual: Relaxed, informal, conversational with engaging details
+        - Enthusiastic: Energetic, positive, excited with motivating details
+        - Serious: Grave, important, weighty with comprehensive information
+        - Encouraging: Supportive, motivating, uplifting with inspiring details
+        - Informative: Educational, explanatory, clear with detailed information
+        - Persuasive: Convincing, compelling, action-oriented with strong reasoning
+        - Neutral: Balanced, objective, unbiased with comprehensive details
+        
+        MESSAGE ENHANCEMENT GUIDELINES:
+        - EXPAND on the original message with additional relevant details
+        - ADD context, explanations, or background information where appropriate
+        - INCLUDE specific details, dates, times, locations, or other relevant information
+        - USE engaging language that captures attention and maintains interest
+        - PROVIDE comprehensive information that answers potential questions
+        - MAKE messages more informative and valuable to the reader
+        
+        Return the response as JSON with the following structure:
+        {{
+            "original_message": "{original_message}",
+            "enhanced_messages": [
+                {{
+                    "message": "First detailed enhanced message suggestion (use {max_length-50} to {max_length} chars)",
+                    "style": "professional",
+                    "tone": "professional",
+                    "approach": "Brief description of the approach used",
+                    "character_count": 150
+                }},
+                {{
+                    "message": "Second detailed enhanced message suggestion (use {max_length-50} to {max_length} chars)",
+                    "style": "creative", 
+                    "tone": "friendly",
+                    "approach": "Brief description of the approach used",
+                    "character_count": 180
+                }},
+                {{
+                    "message": "Third detailed enhanced message suggestion (use {max_length-50} to {max_length} chars)",
+                    "style": "descriptive",
+                    "tone": "informative",
+                    "approach": "Brief description of the approach used", 
+                    "character_count": 200
+                }}
+            ],
+            "metadata": {{
+                "context_type": "{context_type}",
+                "domain": "{domain}",
+                "style_preference": "{style_preference}",
+                "tone": "{tone}",
+                "max_length": {max_length}
+            }}
+        }}
+        
+        IMPORTANT: 
+        - Each message should use 80-95% of the available {max_length} characters
+        - Provide 3 distinctly different approaches with detailed content
+        - Avoid repetition with recent context
+        - Maintain the core meaning while enhancing clarity and impact
+        - Ensure each message is complete, coherent, and comprehensive
+        - Make messages more detailed and informative than the original
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.8
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_messages = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic structure
+                enhanced_messages = {
+                    "original_message": original_message,
+                    "enhanced_messages": [
+                        {
+                            "message": f"Enhanced message: {original_message[:max_length-20]}",
+                            "style": "professional",
+                            "tone": "professional",
+                            "approach": "Direct enhancement with clarity",
+                            "character_count": len(f"Enhanced message: {original_message[:max_length-20]}")
+                        },
+                        {
+                            "message": f"Updated communication: {original_message[:max_length-25]}",
+                            "style": "concise",
+                            "tone": "informative",
+                            "approach": "Brief and to-the-point",
+                            "character_count": len(f"Updated communication: {original_message[:max_length-25]}")
+                        },
+                        {
+                            "message": f"Improved message: {original_message[:max_length-20]}",
+                            "style": "descriptive",
+                            "tone": "friendly",
+                            "approach": "More detailed and informative",
+                            "character_count": len(f"Improved message: {original_message[:max_length-20]}")
+                        }
+                    ],
+                    "metadata": {
+                        "context_type": context_type,
+                        "domain": domain,
+                        "style_preference": style_preference,
+                        "tone": tone,
+                        "max_length": max_length
+                    }
+                }
+            
+            # Add to database context
+            enhanced_message_list = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+            self.add_message_to_context(
+                original_message=original_message,
+                enhanced_messages=enhanced_message_list,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return enhanced_messages
+            
+        except Exception as e:
+            logger.error(f"Error enhancing message: {e}")
+            raise Exception(f"Failed to enhance message: {str(e)}")
+    
+    def regenerate_messages(self, original_message: str, context_type: str = "general", 
+                           domain: str = "general", max_length: int = 500, 
+                           style_preference: str = "professional", 
+                           tone: str = "professional",
+                           exclude_previous: bool = True) -> Dict:
+        """Regenerate message suggestions with context awareness to avoid repetition"""
+        
+        # Get context to understand what was previously generated
+        context_summary = self.get_message_context_summary(domain)
+        
+        prompt = f"""
+        Create THREE NEW and DIFFERENT enhanced message suggestions for the given original message.
+        IMPORTANT: These should be COMPLETELY DIFFERENT from any previous suggestions.
+        
+        PREVIOUS CONTEXT (AVOID THESE APPROACHES):
+        {context_summary}
+        
+        INPUT INFORMATION:
+        - Original Message: "{original_message}"
+        - Context Type: {context_type}
+        - Domain: {domain}
+        - Style Preference: {style_preference}
+        - Tone: {tone}
+        - Maximum Length: {max_length} characters
+        - Exclude Previous: {exclude_previous}
+        
+        REQUIREMENTS:
+        1. CREATE 3 COMPLETELY NEW APPROACHES: Different from any previous suggestions
+        2. CHARACTER LIMIT: Maximum {max_length} characters per message - USE MOST OF THE AVAILABLE CHARACTERS
+        3. AVOID REPETITION: Do not use similar approaches from previous context
+        4. STYLE VARIETY: Provide different stylistic approaches
+        5. FRESH PERSPECTIVE: Offer new angles and interpretations
+        6. TONE CONSISTENCY: Maintain the specified tone throughout
+        7. DETAILED CONTENT: Make messages comprehensive and informative, not brief or minimal
+        8. ENGAGING LANGUAGE: Use compelling and descriptive language to make messages more impactful
+        
+        MESSAGE ENHANCEMENT GUIDELINES:
+        - EXPAND on the original message with additional relevant details
+        - ADD context, explanations, or background information where appropriate
+        - INCLUDE specific details, dates, times, locations, or other relevant information
+        - USE engaging language that captures attention and maintains interest
+        - PROVIDE comprehensive information that answers potential questions
+        - MAKE messages more informative and valuable to the reader
+        
+        Return the response as JSON with the following structure:
+        {{
+            "original_message": "{original_message}",
+            "enhanced_messages": [
+                {{
+                    "message": "First new detailed enhanced message (use {max_length-50} to {max_length} chars)",
+                    "style": "creative",
+                    "tone": "enthusiastic",
+                    "approach": "New approach description",
+                    "character_count": 150,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }},
+                {{
+                    "message": "Second new detailed enhanced message (use {max_length-50} to {max_length} chars)",
+                    "style": "technical",
+                    "tone": "informative",
+                    "approach": "New approach description", 
+                    "character_count": 180,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }},
+                {{
+                    "message": "Third new detailed enhanced message (use {max_length-50} to {max_length} chars)",
+                    "style": "persuasive",
+                    "tone": "encouraging",
+                    "approach": "New approach description",
+                    "character_count": 200,
+                    "uniqueness": "What makes this different from previous suggestions"
+                }}
+            ],
+            "metadata": {{
+                "context_type": "{context_type}",
+                "domain": "{domain}",
+                "style_preference": "{style_preference}",
+                "tone": "{tone}",
+                "max_length": {max_length},
+                "regeneration": true
+            }}
+        }}
+        
+        IMPORTANT: 
+        - Each message should use 80-95% of the available {max_length} characters
+        - Provide 3 completely new approaches with detailed content
+        - Avoid any similarity to previous suggestions
+        - Maintain the core meaning while offering fresh perspectives
+        - Ensure each message is complete, coherent, and comprehensive
+        - Make messages more detailed and informative than the original
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.9
+            )
+            
+            content = response.choices[0].message.content
+            # Clean the content to remove any invalid JSON characters
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]
+            if content.endswith('```'):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                enhanced_messages = json.loads(content)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON parsing error: {e}")
+                logger.error(f"Raw content: {content}")
+                # Fallback to basic structure with different approaches
+                enhanced_messages = {
+                    "original_message": original_message,
+                    "enhanced_messages": [
+                        {
+                            "message": f"New approach: {original_message[:max_length-15]}",
+                            "style": "creative",
+                            "tone": "enthusiastic",
+                            "approach": "Fresh creative approach",
+                            "character_count": len(f"New approach: {original_message[:max_length-15]}"),
+                            "uniqueness": "Uses 'New approach' prefix for freshness"
+                        },
+                        {
+                            "message": f"Revamped communication: {original_message[:max_length-25]}",
+                            "style": "persuasive",
+                            "tone": "encouraging",
+                            "approach": "Bold and compelling",
+                            "character_count": len(f"Revamped communication: {original_message[:max_length-25]}"),
+                            "uniqueness": "Uses 'Revamped communication' for impact"
+                        },
+                        {
+                            "message": f"Optimized message: {original_message[:max_length-20]}",
+                            "style": "technical",
+                            "tone": "informative",
+                            "approach": "Technical optimization focus",
+                            "character_count": len(f"Optimized message: {original_message[:max_length-20]}"),
+                            "uniqueness": "Uses 'Optimized message' for technical appeal"
+                        }
+                    ],
+                    "metadata": {
+                        "context_type": context_type,
+                        "domain": domain,
+                        "style_preference": style_preference,
+                        "tone": tone,
+                        "max_length": max_length,
+                        "regeneration": True
+                    }
+                }
+            
+            # Add to database context
+            enhanced_message_list = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+            self.add_message_to_context(
+                original_message=original_message,
+                enhanced_messages=enhanced_message_list,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return enhanced_messages
+            
+        except Exception as e:
+            logger.error(f"Error regenerating messages: {e}")
+            raise Exception(f"Failed to regenerate messages: {str(e)}")
+    
+    def get_message_suggestions_by_domain(self, domain: str) -> Dict:
+        """Get message enhancement suggestions based on domain"""
+        
+        prompt = f"""
+        Provide focused suggestions for creating effective messages in the {domain} domain.
+        
+        Return the response as JSON with the following structure:
+        {{
+            "domain": "{domain}",
+            "message_patterns": [
+                "First effective message pattern for {domain}",
+                "Second message structure approach",
+                "Third message format recommendation"
+            ],
+            "style_recommendations": [
+                "First style recommendation for {domain} messages",
+                "Second tone suggestion",
+                "Third approach recommendation"
+            ],
+            "common_elements": [
+                "First common element in {domain} messages",
+                "Second typical component",
+                "Third standard feature"
+            ],
+            "avoidance_tips": [
+                "First thing to avoid in {domain} messages",
+                "Second common mistake",
+                "Third pitfall to watch out for"
+            ],
+            "domain_specific_notes": "Tailored recommendations for the {domain} domain"
+        }}
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=Config.MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+                temperature=0.6
+            )
+            
+            content = response.choices[0].message.content
+            suggestions = json.loads(content)
+            
+            # Track token usage
+            tokens_used = response.usage.total_tokens
+            token_tracker.add_tokens(tokens_used)
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Error getting message suggestions by domain: {e}")
+            raise Exception(f"Failed to get message suggestions: {str(e)}")
+    
+    def clear_message_context(self, domain: str = None):
+        """Clear the message context history from database"""
+        try:
+            success = db_manager.clear_message_context(domain)
+            if success:
+                return {"message": f"Message context history cleared successfully for domain: {domain or 'all'}"}
+            else:
+                return {"message": "Failed to clear message context history"}
+        except Exception as e:
+            logger.error(f"Error clearing message context: {e}")
+            return {"message": f"Error clearing message context: {str(e)}"}
+
+# Initialize message body enhancer
+message_body_enhancer = MessageBodyEnhancer()
+
 # API Routes
 
 @app.route('/')
@@ -2186,9 +2669,14 @@ def enhance_title():
         # Extract just the titles as a simple array
         title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
         
+        # Convert to array of arrays format
+        titles_object = {}
+        for i, title in enumerate(title_array, 1):
+            titles_object[f"title{i}"] = title
+        
         return jsonify({
             "success": True,
-            "titles": title_array
+            "titles": titles_object
         })
         
     except Exception as e:
@@ -2239,9 +2727,14 @@ def regenerate_titles():
         # Extract just the titles as a simple array
         title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
         
+        # Convert to array of arrays format
+        titles_object = {}
+        for i, title in enumerate(title_array, 1):
+            titles_object[f"title{i}"] = title
+        
         return jsonify({
             "success": True,
-            "titles": title_array
+            "titles": titles_object
         })
         
     except Exception as e:
@@ -2441,7 +2934,318 @@ def delete_title_enhancement(enhancement_id: int):
         logger.error(f"Error in delete_title_enhancement: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Message Body Enhancement API Routes
 
+@app.route('/api/message/enhance', methods=['POST'])
+def enhance_message():
+    """Enhance a message with 3 unique suggestions"""
+    try:
+        data = request.get_json()
+        original_message = data.get('original_message')
+        context_type = data.get('context_type', 'general')
+        domain = data.get('domain', 'general')
+        max_length = data.get('max_length', 500)
+        style_preference = data.get('style_preference', 'professional')
+        tone = data.get('tone', 'professional')
+        
+        # Validate required parameters
+        if not original_message:
+            return jsonify({
+                "error": "Missing required parameter: original_message"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 50 or max_length > 2000:
+            return jsonify({
+                "error": "max_length must be between 50 and 2000 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 600  # Rough estimate for message enhancement
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_messages = message_body_enhancer.enhance_message(
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference,
+            tone=tone
+        )
+        
+        # Extract just the messages as a simple array
+        message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+        
+        # Convert to array of arrays format
+        messages_object = {}
+        for i, message in enumerate(message_array, 1):
+            messages_object[f"message{i}"] = message
+        
+        return jsonify({
+            "success": True,
+            "messages": messages_object
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in enhance_message: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/regenerate', methods=['POST'])
+def regenerate_messages():
+    """Regenerate message suggestions with context awareness"""
+    try:
+        data = request.get_json()
+        original_message = data.get('original_message')
+        context_type = data.get('context_type', 'general')
+        domain = data.get('domain', 'general')
+        max_length = data.get('max_length', 500)
+        style_preference = data.get('style_preference', 'professional')
+        tone = data.get('tone', 'professional')
+        exclude_previous = data.get('exclude_previous', True)
+        
+        # Validate required parameters
+        if not original_message:
+            return jsonify({
+                "error": "Missing required parameter: original_message"
+            }), 400
+        
+        # Validate max_length
+        if max_length < 50 or max_length > 2000:
+            return jsonify({
+                "error": "max_length must be between 50 and 2000 characters"
+            }), 400
+        
+        # Check token limit
+        estimated_tokens = 650  # Rough estimate for message regeneration
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhanced_messages = message_body_enhancer.regenerate_messages(
+            original_message=original_message,
+            context_type=context_type,
+            domain=domain,
+            max_length=max_length,
+            style_preference=style_preference,
+            tone=tone,
+            exclude_previous=exclude_previous
+        )
+        
+        # Extract just the messages as a simple array
+        message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
+        
+        # Convert to array of arrays format
+        messages_object = {}
+        for i, message in enumerate(message_array, 1):
+            messages_object[f"message{i}"] = message
+        
+        return jsonify({
+            "success": True,
+            "messages": messages_object
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in regenerate_messages: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/suggestions/<domain>', methods=['GET'])
+def get_message_suggestions_by_domain(domain: str):
+    """Get message enhancement suggestions for a specific domain"""
+    try:
+        # Check token limit
+        estimated_tokens = 300  # Rough estimate for domain suggestions
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        suggestions = message_body_enhancer.get_message_suggestions_by_domain(domain)
+        
+        return jsonify({
+            "success": True,
+            "suggestions": suggestions,
+            "metadata": {
+                "domain": domain,
+                "generated_at": datetime.now().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_message_suggestions_by_domain: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/context', methods=['GET'])
+def get_message_context():
+    """Get current message enhancement context history from database"""
+    try:
+        domain = request.args.get('domain', 'general')
+        limit = request.args.get('limit', 5, type=int)
+        
+        # Check token limit for context retrieval
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        context_summary = message_body_enhancer.get_message_context_summary(domain)
+        recent_messages = db_manager.get_recent_message_enhancements(domain, limit)
+        stats = db_manager.get_message_enhancement_stats(domain)
+        
+        return jsonify({
+            "success": True,
+            "context_summary": context_summary,
+            "domain": domain,
+            "recent_enhancements": recent_messages,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_message_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/context/clear', methods=['POST'])
+def clear_message_context():
+    """Clear the message enhancement context history from database"""
+    try:
+        data = request.get_json() or {}
+        domain = data.get('domain')
+        
+        # Check token limit for context clearing
+        estimated_tokens = 50  # Rough estimate for context clearing
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        result = message_body_enhancer.clear_message_context(domain)
+        
+        return jsonify({
+            "success": True,
+            "result": result,
+            "metadata": {
+                "cleared_at": datetime.now().isoformat(),
+                "domain": domain,
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in clear_message_context: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/context/by-type/<context_type>', methods=['GET'])
+def get_message_enhancements_by_type(context_type: str):
+    """Get message enhancements by context type from database"""
+    try:
+        limit = request.args.get('limit', 5, type=int)
+        domain = request.args.get('domain', 'general')
+        
+        # Check token limit for context retrieval by type
+        estimated_tokens = 100  # Rough estimate for context retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        enhancements = db_manager.get_message_enhancements_by_type(context_type, domain, limit)
+        
+        return jsonify({
+            "success": True,
+            "context_type": context_type,
+            "domain": domain,
+            "enhancements": enhancements,
+            "count": len(enhancements),
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_message_enhancements_by_type: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/context/stats', methods=['GET'])
+def get_message_enhancement_stats():
+    """Get message enhancement statistics from database"""
+    try:
+        domain = request.args.get('domain', 'general')
+        
+        # Check token limit for stats retrieval
+        estimated_tokens = 50  # Rough estimate for stats retrieval
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        stats = db_manager.get_message_enhancement_stats(domain)
+        
+        return jsonify({
+            "success": True,
+            "domain": domain,
+            "stats": stats,
+            "metadata": {
+                "retrieved_at": datetime.now().isoformat(),
+                "database_connected": db_manager.test_connection()
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_message_enhancement_stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/message/context/delete/<int:enhancement_id>', methods=['DELETE'])
+def delete_message_enhancement(enhancement_id: int):
+    """Delete specific message enhancement from database"""
+    try:
+        # Check token limit for deletion
+        estimated_tokens = 50  # Rough estimate for deletion
+        if not token_tracker.check_token_limit(estimated_tokens):
+            return jsonify({
+                "error": "Daily token limit exceeded",
+                "usage": token_tracker.get_daily_usage()
+            }), 429
+        
+        success = db_manager.delete_message_enhancement(enhancement_id)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Message enhancement {enhancement_id} deleted successfully",
+                "metadata": {
+                    "deleted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Failed to delete message enhancement {enhancement_id}",
+                "metadata": {
+                    "attempted_at": datetime.now().isoformat(),
+                    "database_connected": db_manager.test_connection()
+                }
+            }), 404
+        
+    except Exception as e:
+        logger.error(f"Error in delete_message_enhancement: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

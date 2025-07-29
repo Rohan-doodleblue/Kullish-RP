@@ -70,6 +70,18 @@ class TitleEnhancementContext(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
+class MessageEnhancementContext(Base):
+    """SQLAlchemy model for message enhancement context"""
+    __tablename__ = 'message_enhancement_context'
+    
+    id = Column(Integer, primary_key=True)
+    original_message = Column(Text, nullable=False)
+    enhanced_messages = Column(Text, nullable=False)  # JSON array of enhanced messages
+    context_type = Column(String(100), nullable=False)
+    domain = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
 class DatabaseManager:
     """Manage PostgreSQL database operations for announcement context"""
     
@@ -634,6 +646,264 @@ class DatabaseManager:
                 
         except Exception as e:
             logger.error(f"Failed to delete title enhancement {enhancement_id}: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+
+    # Message Enhancement Context Methods
+    
+    def add_message_context(self, original_message: str, enhanced_messages: List[str], 
+                          context_type: str = "message_enhancement", 
+                          domain: str = "general") -> bool:
+        """Add message enhancement to database context"""
+        try:
+            session = self.SessionLocal()
+            
+            # Convert enhanced messages list to JSON string
+            enhanced_messages_json = json.dumps(enhanced_messages)
+            
+            # Create new message enhancement context
+            message_context = MessageEnhancementContext(
+                original_message=original_message,
+                enhanced_messages=enhanced_messages_json,
+                context_type=context_type,
+                domain=domain
+            )
+            
+            session.add(message_context)
+            session.commit()
+            session.close()
+            
+            logger.info(f"Message enhancement context added successfully for domain: {domain}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to add message context: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def get_message_context_summary(self, domain: str = "general", limit: int = 3) -> str:
+        """Get a summary of recent message enhancements for context"""
+        try:
+            session = self.SessionLocal()
+            
+            recent_messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .order_by(MessageEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            session.close()
+            
+            if not recent_messages:
+                return "No previous message enhancements for this domain."
+            
+            summary_parts = []
+            for msg in recent_messages:
+                try:
+                    enhanced_messages = json.loads(msg.enhanced_messages)
+                    summary_parts.append(f"Original: '{msg.original_message[:50]}...' → Enhanced: {', '.join(enhanced_messages[:2])}")
+                except json.JSONDecodeError:
+                    summary_parts.append(f"Original: '{msg.original_message[:50]}...' → Enhanced messages available")
+            
+            return " | ".join(summary_parts)
+            
+        except Exception as e:
+            logger.error(f"Failed to get message context summary: {e}")
+            if 'session' in locals():
+                session.close()
+            return "Error retrieving message context summary."
+    
+    def get_recent_message_enhancements(self, domain: str = "general", limit: int = 5) -> List[Dict]:
+        """Get recent message enhancements from database"""
+        try:
+            session = self.SessionLocal()
+            
+            recent_messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .order_by(MessageEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            session.close()
+            
+            enhancements = []
+            for msg in recent_messages:
+                try:
+                    enhanced_messages = json.loads(msg.enhanced_messages)
+                    enhancements.append({
+                        "id": msg.id,
+                        "original_message": msg.original_message,
+                        "enhanced_messages": enhanced_messages,
+                        "context_type": msg.context_type,
+                        "domain": msg.domain,
+                        "created_at": msg.created_at.isoformat()
+                    })
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid JSON in message enhancement {msg.id}")
+                    continue
+            
+            return enhancements
+            
+        except Exception as e:
+            logger.error(f"Failed to get recent message enhancements: {e}")
+            if 'session' in locals():
+                session.close()
+            return []
+    
+    def get_message_enhancements_by_type(self, context_type: str, domain: str = "general", limit: int = 5) -> List[Dict]:
+        """Get message enhancements filtered by context type"""
+        try:
+            session = self.SessionLocal()
+            
+            messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.context_type == context_type)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .order_by(MessageEnhancementContext.created_at.desc())\
+                .limit(limit)\
+                .all()
+            
+            session.close()
+            
+            enhancements = []
+            for msg in messages:
+                try:
+                    enhanced_messages = json.loads(msg.enhanced_messages)
+                    enhancements.append({
+                        "id": msg.id,
+                        "original_message": msg.original_message,
+                        "enhanced_messages": enhanced_messages,
+                        "context_type": msg.context_type,
+                        "domain": msg.domain,
+                        "created_at": msg.created_at.isoformat()
+                    })
+                except json.JSONDecodeError:
+                    logger.warning(f"Invalid JSON in message enhancement {msg.id}")
+                    continue
+            
+            return enhancements
+            
+        except Exception as e:
+            logger.error(f"Failed to get message enhancements by type: {e}")
+            if 'session' in locals():
+                session.close()
+            return []
+    
+    def get_message_enhancement_stats(self, domain: str = "general") -> Dict[str, Any]:
+        """Get statistics about message enhancements"""
+        try:
+            session = self.SessionLocal()
+            
+            # Total enhancements
+            total_count = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .count()
+            
+            # Enhancements by context type
+            context_type_counts = {}
+            context_types = session.query(MessageEnhancementContext.context_type)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .distinct()\
+                .all()
+            
+            for context_type_tuple in context_types:
+                context_type = context_type_tuple[0]
+                count = session.query(MessageEnhancementContext)\
+                    .filter(MessageEnhancementContext.context_type == context_type)\
+                    .filter(MessageEnhancementContext.domain == domain)\
+                    .filter(MessageEnhancementContext.is_active == True)\
+                    .count()
+                context_type_counts[context_type] = count
+            
+            # Recent activity (last 7 days)
+            week_ago = datetime.utcnow() - timedelta(days=7)
+            recent_activity = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.domain == domain)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .filter(MessageEnhancementContext.created_at >= week_ago)\
+                .count()
+            
+            session.close()
+            
+            return {
+                "total_enhancements": total_count,
+                "by_context_type": context_type_counts,
+                "domain": domain,
+                "recent_activity_7_days": recent_activity
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get message enhancement stats: {e}")
+            if 'session' in locals():
+                session.close()
+            return {
+                "total_enhancements": 0,
+                "by_context_type": {},
+                "domain": domain,
+                "recent_activity_7_days": 0
+            }
+    
+    def clear_message_context(self, domain: str = None) -> bool:
+        """Clear message enhancement context history (soft delete)"""
+        try:
+            session = self.SessionLocal()
+            
+            if domain:
+                # Clear specific domain
+                session.query(MessageEnhancementContext)\
+                    .filter(MessageEnhancementContext.domain == domain)\
+                    .filter(MessageEnhancementContext.is_active == True)\
+                    .update({"is_active": False})
+                logger.info(f"Message context cleared for domain: {domain}")
+            else:
+                # Clear all domains
+                session.query(MessageEnhancementContext)\
+                    .filter(MessageEnhancementContext.is_active == True)\
+                    .update({"is_active": False})
+                logger.info("All message context cleared")
+            
+            session.commit()
+            session.close()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear message context: {e}")
+            if 'session' in locals():
+                session.rollback()
+                session.close()
+            return False
+    
+    def delete_message_enhancement(self, enhancement_id: int) -> bool:
+        """Soft delete a specific message enhancement"""
+        try:
+            session = self.SessionLocal()
+            
+            enhancement = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.id == enhancement_id)\
+                .filter(MessageEnhancementContext.is_active == True)\
+                .first()
+            
+            if enhancement:
+                enhancement.is_active = False
+                session.commit()
+                session.close()
+                logger.info(f"Message enhancement {enhancement_id} deleted successfully")
+                return True
+            else:
+                session.close()
+                logger.warning(f"Message enhancement {enhancement_id} not found")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Failed to delete message enhancement {enhancement_id}: {e}")
             if 'session' in locals():
                 session.rollback()
                 session.close()

@@ -19,6 +19,380 @@
       "description": "Development server"
     }
   ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token for user authentication. Include 'Bearer ' prefix followed by the token."
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "healthy"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15T10:30:00"
+          },
+          "service": {
+            "type": "string",
+            "example": "Automated Assessment API"
+          }
+        }
+      },
+      "TokenUsageResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "tokens_used": {
+            "type": "integer",
+            "example": 1250
+          },
+          "tokens_remaining": {
+            "type": "integer",
+            "example": 23750
+          },
+          "limit": {
+            "type": "integer",
+            "example": 25000
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsageResponse"
+          }
+        }
+      },
+      "TitleEnhancementRequest": {
+        "type": "object",
+        "required": ["original_title"],
+        "properties": {
+          "original_title": {
+            "type": "string",
+            "description": "Original title to enhance"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Context type for enhancement",
+            "default": "general"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for enhancement",
+            "default": "general"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum length for enhanced titles",
+            "default": 50
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Style preference for enhancement",
+            "default": "professional"
+          }
+        }
+      },
+      "TitleEnhancementResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "titles": {
+            "type": "object",
+            "properties": {
+              "title1": {"type": "string"},
+              "title2": {"type": "string"},
+              "title3": {"type": "string"}
+          }
+        }
+      }
+    },
+      "TitleRegenerationRequest": {
+        "type": "object",
+        "required": ["original_title"],
+        "properties": {
+          "original_title": {
+            "type": "string",
+            "description": "Original title to enhance"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Context type for enhancement",
+            "default": "general"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for enhancement",
+            "default": "general"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum length for enhanced titles",
+            "default": 50
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Style preference for enhancement",
+            "default": "professional"
+          },
+          "exclude_previous": {
+            "type": "boolean",
+            "description": "Whether to exclude previous suggestions",
+            "default": true
+          }
+        }
+      },
+      "MessageEnhancementRequest": {
+        "type": "object",
+        "required": ["original_message"],
+        "properties": {
+          "original_message": {
+            "type": "string",
+            "description": "Original message to enhance"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Context type for enhancement",
+            "default": "general"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for enhancement",
+            "default": "general"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum length for enhanced messages",
+            "default": 500
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Style preference for enhancement",
+            "default": "professional"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Tone for enhancement",
+            "default": "professional"
+          }
+        }
+      },
+      "MessageEnhancementResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "messages": {
+            "type": "object",
+            "properties": {
+              "message1": {"type": "string"},
+              "message2": {"type": "string"},
+              "message3": {"type": "string"}
+                }
+              }
+            }
+          },
+      "MessageRegenerationRequest": {
+        "type": "object",
+        "required": ["original_message"],
+        "properties": {
+          "original_message": {
+            "type": "string",
+            "description": "Original message to enhance"
+          },
+          "context_type": {
+            "type": "string",
+            "description": "Context type for enhancement",
+            "default": "general"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain for enhancement",
+            "default": "general"
+          },
+          "max_length": {
+            "type": "integer",
+            "description": "Maximum length for enhanced messages",
+            "default": 500
+          },
+          "style_preference": {
+            "type": "string",
+            "description": "Style preference for enhancement",
+            "default": "professional"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Tone for enhancement",
+            "default": "professional"
+          },
+          "exclude_previous": {
+            "type": "boolean",
+            "description": "Whether to exclude previous suggestions",
+            "default": true
+          }
+        }
+      },
+      "CompleteAnnouncementRequest": {
+        "type": "object",
+        "required": ["title", "message_body"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Original title"
+          },
+          "message_body": {
+            "type": "string",
+            "description": "Original message body"
+          },
+          "announcement_type": {
+            "type": "string",
+            "description": "Type of announcement",
+            "default": "General Notice"
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Target audience",
+            "default": "All"
+          },
+          "tone": {
+            "type": "string",
+            "description": "Desired tone",
+            "default": "Professional"
+          },
+          "max_title_length": {
+            "type": "integer",
+            "description": "Maximum title length",
+            "default": 20
+          },
+          "max_message_length": {
+            "type": "integer",
+            "description": "Maximum message length",
+            "default": 400
+          },
+          "include_suggestions": {
+            "type": "boolean",
+            "description": "Whether to include suggestions",
+            "default": false
+          }
+        }
+      },
+      "AnnouncementCreationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+          }
+        }
+      }
+    },
+      "AnnouncementSuggestionsRequest": {
+        "type": "object",
+        "required": ["announcement_type", "target_audience"],
+        "properties": {
+          "announcement_type": {
+            "type": "string",
+            "description": "Type of announcement"
+          },
+          "target_audience": {
+            "type": "string",
+            "description": "Target audience"
+          }
+        }
+      },
+      "AnnouncementSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "suggestions": {
+            "type": "object",
+            "properties": {
+              "title_suggestions": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "message_body_suggestions": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "tone_suggestions": {
+                "type": "array",
+                "items": {"type": "string"}
+                  }
+                }
+              }
+            }
+          },
+      "LLMUsageSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "total_usage": {
+            "type": "object",
+            "properties": {
+              "total_text_requests": {"type": "integer"},
+              "total_image_requests": {"type": "integer"},
+              "total_tokens_used": {"type": "integer"},
+              "total_cost_usd": {"type": "number"}
+            }
+          },
+          "daily_usage": {
+            "type": "object",
+            "properties": {
+              "text_requests": {"type": "integer"},
+              "image_requests": {"type": "integer"},
+              "tokens_used": {"type": "integer"},
+              "cost_usd": {"type": "number"}
+            }
+          },
+          "monthly_usage": {
+            "type": "object",
+            "properties": {
+              "text_requests": {"type": "integer"},
+              "image_requests": {"type": "integer"},
+              "tokens_used": {"type": "integer"},
+              "cost_usd": {"type": "number"}
+              }
+            }
+          }
+        }
+      }
+    },
   "paths": {
     "/health": {
       "get": {
@@ -32,18 +406,13 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthResponse"
-                },
-                "example": {
-                  "status": "healthy",
-                  "timestamp": "2024-01-15T10:30:00",
-                  "service": "Automated Assessment API"
                 }
               }
             }
-          }
-        }
-      }
-    },
+                }
+              }
+            }
+          },
     "/api/token-usage": {
       "get": {
         "summary": "Get Token Usage",
@@ -56,1051 +425,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TokenUsageResponse"
-                },
-                "example": {
-                  "date": "2024-01-15",
-                  "tokens_used": 1250,
-                  "tokens_remaining": 23750,
-                  "limit": 25000
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/generate/multiple-choice": {
-      "post": {
-        "summary": "Generate Multiple Choice Questions",
-        "description": "Generate multiple choice questions using AI for a specific subject and topic",
-        "tags": ["Assessment Generation"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MultipleChoiceGenerationRequest"
-              },
-              "example": {
-                "subject": "Mathematics",
-                "topic": "Algebra",
-                "num_questions": 5
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Questions generated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MultipleChoiceGenerationResponse"
-                },
-                "example": {
-                  "success": true,
-                  "questions": [
-                    {
-                      "question": "What is the solution to 2x + 5 = 13?",
-                      "options": {
-                        "A": "x = 4",
-                        "B": "x = 8",
-                        "C": "x = 3",
-                        "D": "x = 6"
-                      },
-                      "correct_answer": "A",
-                      "explanation": "Subtract 5 from both sides: 2x = 8, then divide by 2: x = 4"
-                    }
-                  ],
-                  "metadata": {
-                    "subject": "Mathematics",
-                    "topic": "Algebra",
-                    "num_questions": 5,
-                    "generated_at": "2024-01-15T10:30:00"
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/generate/essay-prompt": {
-      "post": {
-        "summary": "Generate Essay Prompt",
-        "description": "Generate an essay prompt with rubric using AI for a specific subject and topic",
-        "tags": ["Assessment Generation"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EssayPromptGenerationRequest"
-              },
-              "example": {
-                "subject": "English Literature",
-                "topic": "Shakespeare's Macbeth"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Essay prompt generated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EssayPromptGenerationResponse"
-                },
-                "example": {
-                  "success": true,
-                  "essay_prompt": {
-                    "prompt": "Analyze the theme of ambition in Shakespeare's Macbeth...",
-                    "word_limit": 500,
-                    "rubric": {
-                      "content": "Analysis of theme and character development",
-                      "organization": "Clear structure with introduction, body, conclusion",
-                      "grammar": "Proper grammar, spelling, and punctuation",
-                      "creativity": "Original insights and interpretation"
-                    }
-                  },
-                  "metadata": {
-                    "subject": "English Literature",
-                    "topic": "Shakespeare's Macbeth",
-                    "generated_at": "2024-01-15T10:30:00"
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/grade/multiple-choice": {
-      "post": {
-        "summary": "Grade Multiple Choice Questions",
-        "description": "Grade multiple choice questions and provide instant feedback",
-        "tags": ["Assessment Grading"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MultipleChoiceGradingRequest"
-              },
-              "example": {
-                "questions": [
-                  {
-                    "question": "What is 2 + 2?",
-                    "options": {
-                      "A": "3",
-                      "B": "4",
-                      "C": "5",
-                      "D": "6"
-                    },
-                    "correct_answer": "B",
-                    "explanation": "Basic addition: 2 + 2 = 4"
-                  }
-                ],
-                "student_answers": ["B"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Questions graded successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MultipleChoiceGradingResponse"
-                },
-                "example": {
-                  "success": true,
-                  "grading_result": {
-                    "total_questions": 1,
-                    "correct_answers": 1,
-                    "score_percentage": 100.0,
-                    "detailed_results": [
-                      {
-                        "question_number": 1,
-                        "student_answer": "B",
-                        "correct_answer": "B",
-                        "is_correct": true,
-                        "explanation": "Basic addition: 2 + 2 = 4"
-                      }
-                    ],
-                    "grade": "A"
-                  },
-                  "metadata": {
-                    "graded_at": "2024-01-15T10:30:00",
-                    "total_questions": 1
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - number of questions and answers don't match",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/grade/essay": {
-      "post": {
-        "summary": "Grade Essay",
-        "description": "Grade an essay using AI and provide detailed feedback",
-        "tags": ["Assessment Grading"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EssayGradingRequest"
-              },
-              "example": {
-                "essay_prompt": {
-                  "prompt": "Write about your favorite book and why you like it.",
-                  "word_limit": 200,
-                  "rubric": {
-                    "content": "Clear description of the book",
-                    "organization": "Well-structured response",
-                    "grammar": "Proper grammar and spelling",
-                    "creativity": "Original thoughts and insights"
-                  }
-                },
-                "student_essay": "My favorite book is Harry Potter and the Sorcerer Stone. I love this book because it takes me to a magical world where anything is possible."
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Essay graded successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EssayGradingResponse"
-                },
-                "example": {
-                  "success": true,
-                  "grading_result": {
-                    "overall_score": 85,
-                    "word_count": 45,
-                    "detailed_scores": {
-                      "content": {
-                        "score": 20,
-                        "max_score": 25,
-                        "feedback": "Good description of the book"
-                      },
-                      "organization": {
-                        "score": 18,
-                        "max_score": 25,
-                        "feedback": "Clear structure"
-                      },
-                      "grammar": {
-                        "score": 22,
-                        "max_score": 25,
-                        "feedback": "Excellent grammar"
-                      },
-                      "creativity": {
-                        "score": 20,
-                        "max_score": 25,
-                        "feedback": "Shows original thinking"
-                      }
-                    },
-                    "overall_feedback": "This is a well-written essay that demonstrates good understanding...",
-                    "grade": "B+"
-                  },
-                  "metadata": {
-                    "graded_at": "2024-01-15T10:30:00",
-                    "word_count": 45
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - student essay is empty",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/assessment/complete": {
-      "post": {
-        "summary": "Create Complete Assessment",
-        "description": "Create a complete assessment with questions and grading capabilities",
-        "tags": ["Assessment Generation"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteAssessmentRequest"
-              },
-              "example": {
-                "subject": "Science",
-                "topic": "Photosynthesis",
-                "type": "multiple_choice"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Assessment created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompleteAssessmentResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - invalid assessment type",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/curriculum/generate-lesson-plan": {
-      "post": {
-        "summary": "Generate Lesson Plan",
-        "description": "Generate a comprehensive lesson plan with learning objectives, activities, and assessment strategies",
-        "tags": ["Curriculum Assistant"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LessonPlanRequest"
-              },
-              "example": {
-                "subject": "Mathematics",
-                "topic": "Linear Equations",
-                "grade_level": "8th grade",
-                "duration": "45 minutes"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Lesson plan generated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LessonPlanResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/curriculum/map-standards": {
-      "post": {
-        "summary": "Map Curriculum Standards",
-        "description": "Map curriculum standards for a specific topic and grade level",
-        "tags": ["Curriculum Assistant"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StandardsMappingRequest"
-              },
-              "example": {
-                "subject": "Science",
-                "topic": "Photosynthesis",
-                "grade_level": "7th grade"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Standards mapped successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardsMappingResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/curriculum/curate-resources": {
-      "post": {
-        "summary": "Curate Educational Resources",
-        "description": "Curate educational resources for a specific topic and grade level",
-        "tags": ["Curriculum Assistant"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResourceCurationRequest"
-              },
-              "example": {
-                "subject": "English Literature",
-                "topic": "Shakespeare",
-                "grade_level": "9th grade",
-                "resource_types": ["videos", "articles", "interactive"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Resources curated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResourceCurationResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/curriculum/cross-curricular-unit": {
-      "post": {
-        "summary": "Create Cross-Curricular Unit",
-        "description": "Create a cross-curricular unit integrating multiple subjects around a central theme",
-        "tags": ["Curriculum Assistant"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CrossCurricularRequest"
-              },
-              "example": {
-                "subjects": ["Mathematics", "Science", "Social Studies"],
-                "central_theme": "Environmental Sustainability",
-                "grade_level": "8th grade"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Cross-curricular unit created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CrossCurricularResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/curriculum/complete-package": {
-      "post": {
-        "summary": "Create Complete Curriculum Package",
-        "description": "Create a complete curriculum package with lesson plan, standards mapping, and resources",
-        "tags": ["Curriculum Assistant"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompletePackageRequest"
-              },
-              "example": {
-                "subject": "Mathematics",
-                "topic": "Algebra",
-                "grade_level": "8th grade",
-                "duration": "45 minutes",
-                "include_resources": true
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Complete curriculum package created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CompletePackageResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-
-    "/api/announcement/suggestions": {
-      "post": {
-        "summary": "Get Announcement Suggestions",
-        "description": "Get suggestions for announcement structure and content based on type and audience",
-        "tags": ["Announcement Management"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AnnouncementSuggestionsRequest"
-              },
-              "example": {
-                "announcement_type": "Policy Update",
-                "target_audience": "Faculty"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Suggestions generated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementSuggestionsResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context": {
-      "get": {
-        "summary": "Get Announcement Context",
-        "description": "Get current announcement context history from database for continuity",
-        "tags": ["Announcement Management"],
-        "responses": {
-          "200": {
-            "description": "Context retrieved successfully from database",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementContextResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context/clear": {
-      "post": {
-        "summary": "Clear Announcement Context",
-        "description": "Clear the announcement context history from database",
-        "tags": ["Announcement Management"],
-        "responses": {
-          "200": {
-            "description": "Context cleared successfully from database",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContextClearResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context/by-type/{announcement_type}": {
-      "get": {
-        "summary": "Get Announcements by Type",
-        "description": "Get announcements filtered by type from database",
-        "tags": ["Announcement Management"],
-        "parameters": [
-          {
-            "name": "announcement_type",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Type of announcement to filter by"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Maximum number of announcements to return"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Announcements retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementsByTypeResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context/by-audience/{target_audience}": {
-      "get": {
-        "summary": "Get Announcements by Audience",
-        "description": "Get announcements filtered by target audience from database",
-        "tags": ["Announcement Management"],
-        "parameters": [
-          {
-            "name": "target_audience",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Target audience to filter by"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Maximum number of announcements to return"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Announcements retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementsByAudienceResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context/stats": {
-      "get": {
-        "summary": "Get Announcement Statistics",
-        "description": "Get comprehensive statistics about announcements from database",
-        "tags": ["Announcement Management"],
-        "responses": {
-          "200": {
-            "description": "Statistics retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementStatsResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/context/delete/{announcement_id}": {
-      "delete": {
-        "summary": "Delete Specific Announcement",
-        "description": "Delete a specific announcement from database (soft delete)",
-        "tags": ["Announcement Management"],
-        "parameters": [
-          {
-            "name": "announcement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID of the announcement to delete"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Announcement deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementDeleteResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Announcement not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/announcement/create": {
-      "post": {
-        "summary": "Create Enhanced Announcement",
-        "description": "Create an enhanced announcement with improved title and professional message body using AI",
-        "tags": ["Announcement Management"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CompleteAnnouncementRequest"
-              },
-              "example": {
-                "title": "PTM Meeting",
-                "message_body": "Parent Teacher Meeting scheduled for next week",
-                "announcement_type": "PTM/Meetings",
-                "target_audience": "Family - Primary Wing",
-                "tone": "Professional",
-                "max_title_length": 25,
-                "max_message_length": 500,
-                "include_suggestions": false
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Complete announcement package created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnnouncementCreationResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request - missing required parameters",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1113,19 +437,17 @@
         "summary": "Enhance Title",
         "description": "Generate 3 unique enhanced title suggestions with context awareness",
         "tags": ["Title Enhancement"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TitleEnhancementRequest"
-              },
-              "example": {
-                "original_title": "Meeting tomorrow",
-                "context_type": "business",
-                "domain": "professional",
-                "max_length": 40,
-                "style_preference": "professional"
               }
             }
           }
@@ -1137,20 +459,12 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TitleEnhancementResponse"
-                },
-                "example": {
-                  "success": true,
-                  "titles": [
-                    "Upcoming collaboration session",
-                    "Tomorrow's strategic meet-up",
-                    "Quick meet tomorrow"
-                  ]
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request - missing required parameters",
+          "401": {
+            "description": "Unauthorized - JWT token required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1187,20 +501,17 @@
         "summary": "Regenerate Title Suggestions",
         "description": "Generate new title suggestions while avoiding previous ones",
         "tags": ["Title Enhancement"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TitleRegenerationRequest"
-              },
-              "example": {
-                "original_title": "Meeting tomorrow",
-                "context_type": "business",
-                "domain": "professional",
-                "max_length": 40,
-                "style_preference": "creative",
-                "exclude_previous": true
               }
             }
           }
@@ -1216,355 +527,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request - missing required parameters",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/suggestions/{domain}": {
-      "get": {
-        "summary": "Get Domain Suggestions",
-        "description": "Get title enhancement suggestions for a specific domain",
-        "tags": ["Title Enhancement"],
-        "parameters": [
-          {
-            "name": "domain",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Domain for suggestions (e.g., business, technical, academic)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain suggestions retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DomainSuggestionsResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/context": {
-      "get": {
-        "summary": "Get Title Context",
-        "description": "Get current title enhancement context history from database",
-        "tags": ["Title Enhancement"],
-        "parameters": [
-          {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Number of recent enhancements to return"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Context retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TitleContextResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/context/clear": {
-      "post": {
-        "summary": "Clear Title Context",
-        "description": "Clear the title enhancement context history from database",
-        "tags": ["Title Enhancement"],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "domain": {
-                    "type": "string",
-                    "description": "Domain to clear (optional, clears all if not specified)"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Context cleared successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContextClearResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/context/by-type/{context_type}": {
-      "get": {
-        "summary": "Get Title Enhancements by Type",
-        "description": "Get title enhancements by context type from database",
-        "tags": ["Title Enhancement"],
-        "parameters": [
-          {
-            "name": "context_type",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Context type to filter by"
-          },
-          {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Maximum number of enhancements to return"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Enhancements retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TitleEnhancementsByTypeResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/context/stats": {
-      "get": {
-        "summary": "Get Title Enhancement Statistics",
-        "description": "Get title enhancement statistics from database",
-        "tags": ["Title Enhancement"],
-        "parameters": [
-          {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Statistics retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TitleEnhancementStatsResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/title/context/delete/{enhancement_id}": {
-      "delete": {
-        "summary": "Delete Title Enhancement",
-        "description": "Delete specific title enhancement from database (soft delete)",
-        "tags": ["Title Enhancement"],
-        "parameters": [
-          {
-            "name": "enhancement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID of the enhancement to delete"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Enhancement deleted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TitleEnhancementDeleteResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Enhancement not found",
+          "401": {
+            "description": "Unauthorized - JWT token required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1601,20 +565,17 @@
         "summary": "Enhance Message Body",
         "description": "Generate 3 unique enhanced message body suggestions with context awareness",
         "tags": ["Message Enhancement"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MessageEnhancementRequest"
-              },
-              "example": {
-                "original_message": "Meeting tomorrow at 2pm",
-                "context_type": "business",
-                "domain": "professional",
-                "max_length": 500,
-                "style_preference": "professional",
-                "tone": "professional"
               }
             }
           }
@@ -1626,20 +587,12 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MessageEnhancementResponse"
-                },
-                "example": {
-                  "success": true,
-                  "messages": {
-                    "message1": "We are pleased to announce an important team meeting scheduled for tomorrow at 2:00 PM. This session will focus on key project updates and strategic planning discussions. All team members are required to attend as we will be covering critical information that impacts our upcoming deliverables and organizational objectives.",
-                    "message2": "Please be advised that a mandatory team meeting has been scheduled for tomorrow at 2:00 PM. This meeting will address essential project milestones, upcoming deadlines, and collaborative opportunities. Your attendance is crucial as we will be discussing matters that directly affect our team's performance and success metrics.",
-                    "message3": "Important Notice: Team meeting tomorrow at 2:00 PM. This comprehensive session will cover project status updates, resource allocation, and strategic initiatives. All team members must attend as we will be reviewing critical information that shapes our organizational direction and operational efficiency."
-                  }
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request - missing required parameters",
+          "401": {
+            "description": "Unauthorized - JWT token required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1676,21 +629,17 @@
         "summary": "Regenerate Message Body Suggestions",
         "description": "Generate new message body suggestions while avoiding previous ones",
         "tags": ["Message Enhancement"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MessageRegenerationRequest"
-              },
-              "example": {
-                "original_message": "Meeting tomorrow at 2pm",
-                "context_type": "business",
-                "domain": "professional",
-                "max_length": 500,
-                "style_preference": "creative",
-                "tone": "professional",
-                "exclude_previous": true
               }
             }
           }
@@ -1706,8 +655,8 @@
               }
             }
           },
-          "400": {
-            "description": "Bad request - missing required parameters",
+          "401": {
+            "description": "Unauthorized - JWT token required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1739,145 +688,43 @@
         }
       }
     },
-    "/api/message/suggestions/{domain}": {
-      "get": {
-        "summary": "Get Domain Message Suggestions",
-        "description": "Get message enhancement suggestions for a specific domain",
-        "tags": ["Message Enhancement"],
-        "parameters": [
-          {
-            "name": "domain",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Domain for suggestions (e.g., business, technical, academic)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain suggestions retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageDomainSuggestionsResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/message/context": {
-      "get": {
-        "summary": "Get Message Context",
-        "description": "Get current message enhancement context history from database",
-        "tags": ["Message Enhancement"],
-        "parameters": [
-          {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Number of recent enhancements to return"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Context retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MessageContextResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Daily token limit exceeded",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/message/context/clear": {
+    "/api/enhance-withGuardrails": {
       "post": {
-        "summary": "Clear Message Context",
-        "description": "Clear the message enhancement context history from database",
+        "summary": "Enhance Message with School Guardrails",
+        "description": "Generate 3 unique enhanced message suggestions following strict school rules and regulations",
         "tags": ["Message Enhancement"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "domain": {
-                    "type": "string",
-                    "description": "Domain to clear (optional, clears all if not specified)"
-                  }
-                }
+                "$ref": "#/components/schemas/MessageEnhancementRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Context cleared successfully",
+            "description": "Message enhanced successfully with guardrails",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContextClearResponse"
+                  "$ref": "#/components/schemas/MessageEnhancementResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1905,49 +752,43 @@
         }
       }
     },
-    "/api/message/context/by-type/{context_type}": {
-      "get": {
-        "summary": "Get Message Enhancements by Type",
-        "description": "Get message enhancements by context type from database",
+    "/api/enhance-withGuardrails/regenerate": {
+      "post": {
+        "summary": "Regenerate School Message with Guardrails",
+        "description": "Generate new school-compliant message suggestions while avoiding previous ones",
         "tags": ["Message Enhancement"],
-        "parameters": [
+        "security": [
           {
-            "name": "context_type",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Context type to filter by"
-          },
-          {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 5
-            },
-            "description": "Maximum number of enhancements to return"
+            "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRegenerationRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Enhancements retrieved successfully",
+            "description": "School messages regenerated successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageEnhancementsByTypeResponse"
+                  "$ref": "#/components/schemas/MessageEnhancementResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1975,30 +816,43 @@
         }
       }
     },
-    "/api/message/context/stats": {
-      "get": {
-        "summary": "Get Message Enhancement Statistics",
-        "description": "Get message enhancement statistics from database",
-        "tags": ["Message Enhancement"],
-        "parameters": [
+    "/api/announcement/create": {
+      "post": {
+        "summary": "Create Enhanced Announcement",
+        "description": "Create an enhanced announcement with improved title and professional message body using AI",
+        "tags": ["Announcement Management"],
+        "security": [
           {
-            "name": "domain",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "general"
-            },
-            "description": "Filter by domain"
+            "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteAnnouncementRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Statistics retrieved successfully",
+            "description": "Complete announcement package created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageEnhancementStatsResponse"
+                  "$ref": "#/components/schemas/AnnouncementCreationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -2026,35 +880,39 @@
         }
       }
     },
-    "/api/message/context/delete/{enhancement_id}": {
-      "delete": {
-        "summary": "Delete Message Enhancement",
-        "description": "Delete specific message enhancement from database (soft delete)",
-        "tags": ["Message Enhancement"],
-        "parameters": [
+    "/api/announcement/suggestions": {
+      "post": {
+        "summary": "Get Announcement Suggestions",
+        "description": "Get suggestions for announcement structure and content based on type and audience",
+        "tags": ["Announcement Management"],
+        "security": [
           {
-            "name": "enhancement_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "ID of the enhancement to delete"
+            "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementSuggestionsRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Enhancement deleted successfully",
+            "description": "Suggestions generated successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageEnhancementDeleteResponse"
+                  "$ref": "#/components/schemas/AnnouncementSuggestionsResponse"
                 }
               }
             }
           },
-          "404": {
-            "description": "Enhancement not found",
+          "401": {
+            "description": "Unauthorized - JWT token required",
             "content": {
               "application/json": {
                 "schema": {
@@ -2118,38 +976,28 @@
     "/api/llm-usage/daily/{date}": {
       "get": {
         "summary": "Get Daily LLM Usage",
-        "description": "Get detailed LLM usage statistics for a specific date",
+        "description": "Get LLM usage statistics for a specific date",
         "tags": ["LLM Usage Tracking"],
         "parameters": [
           {
             "name": "date",
             "in": "path",
             "required": true,
+            "description": "Date in YYYY-MM-DD format",
             "schema": {
               "type": "string",
               "format": "date",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-            },
-            "description": "Date in YYYY-MM-DD format"
+              "example": "2025-07-30"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Daily usage data retrieved successfully",
+            "description": "Daily usage statistics retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMDailyUsageResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No data found for the specified date",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/LLMUsageSummaryResponse"
                 }
               }
             }
@@ -2170,37 +1018,28 @@
     "/api/llm-usage/monthly/{month}": {
       "get": {
         "summary": "Get Monthly LLM Usage",
-        "description": "Get detailed LLM usage statistics for a specific month",
+        "description": "Get LLM usage statistics for a specific month",
         "tags": ["LLM Usage Tracking"],
         "parameters": [
           {
             "name": "month",
             "in": "path",
             "required": true,
+            "description": "Month in YYYY-MM format",
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}$"
-            },
-            "description": "Month in YYYY-MM format"
+              "pattern": "^\\d{4}-\\d{2}$",
+              "example": "2025-07"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Monthly usage data retrieved successfully",
+            "description": "Monthly usage statistics retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMMonthlyUsageResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No data found for the specified month",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/LLMUsageSummaryResponse"
                 }
               }
             }
@@ -2221,7 +1060,7 @@
     "/api/llm-usage/trends": {
       "get": {
         "summary": "Get LLM Usage Trends",
-        "description": "Get usage trends and analytics for LLM consumption patterns",
+        "description": "Get LLM usage trends and analytics data",
         "tags": ["LLM Usage Tracking"],
         "responses": {
           "200": {
@@ -2229,7 +1068,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMUsageTrendsResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "trends": {
+                      "type": "object",
+                      "properties": {
+                        "daily_averages": {"type": "object"},
+                        "peak_usage_days": {"type": "array"},
+                        "cost_trends": {"type": "object"}
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2258,7 +1108,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LLMUsageInsightsResponse"
+                  "type": "object",
+                  "properties": {
+                    "success": {"type": "boolean"},
+                    "insights": {
+                      "type": "object",
+                      "properties": {
+                        "usage_patterns": {"type": "string"},
+                        "cost_analysis": {"type": "string"},
+                        "recommendations": {"type": "string"}
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2277,2449 +1138,10 @@
       }
     }
   },
-  "components": {
-    "schemas": {
-      "HealthResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "example": "healthy"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2024-01-15T10:30:00"
-          },
-          "service": {
-            "type": "string",
-            "example": "Automated Assessment API"
-          }
-        }
-      },
-      "TokenUsageResponse": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "string",
-            "format": "date",
-            "example": "2024-01-15"
-          },
-          "tokens_used": {
-            "type": "integer",
-            "example": 1250
-          },
-          "tokens_remaining": {
-            "type": "integer",
-            "example": 23750
-          },
-          "limit": {
-            "type": "integer",
-            "example": 25000
-          }
-        }
-      },
-      "MultipleChoiceGenerationRequest": {
-        "type": "object",
-        "required": ["subject", "topic"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area (e.g., Mathematics, Science, English)",
-            "example": "Mathematics"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic within the subject",
-            "example": "Algebra"
-          },
-          "num_questions": {
-            "type": "integer",
-            "description": "Number of questions to generate",
-            "default": 5,
-            "minimum": 1,
-            "maximum": 20,
-            "example": 5
-          }
-        }
-      },
-      "Question": {
-        "type": "object",
-        "properties": {
-          "question": {
-            "type": "string",
-            "description": "The question text"
-          },
-          "options": {
-            "type": "object",
-            "properties": {
-              "A": {"type": "string"},
-              "B": {"type": "string"},
-              "C": {"type": "string"},
-              "D": {"type": "string"}
-            }
-          },
-          "correct_answer": {
-            "type": "string",
-            "enum": ["A", "B", "C", "D"]
-          },
-          "explanation": {
-            "type": "string",
-            "description": "Explanation of why the answer is correct"
-          }
-        }
-      },
-      "MultipleChoiceGenerationResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "questions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Question"
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "EssayPromptGenerationRequest": {
-        "type": "object",
-        "required": ["subject", "topic"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area",
-            "example": "English Literature"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic within the subject",
-            "example": "Shakespeare's Macbeth"
-          }
-        }
-      },
-      "EssayPrompt": {
-        "type": "object",
-        "properties": {
-          "prompt": {
-            "type": "string",
-            "description": "The essay prompt text"
-          },
-          "word_limit": {
-            "type": "integer",
-            "description": "Maximum word count for the essay"
-          },
-          "rubric": {
-            "type": "object",
-            "properties": {
-              "content": {"type": "string"},
-              "organization": {"type": "string"},
-              "grammar": {"type": "string"},
-              "creativity": {"type": "string"}
-            }
-          }
-        }
-      },
-      "EssayPromptGenerationResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "essay_prompt": {
-            "$ref": "#/components/schemas/EssayPrompt"
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "MultipleChoiceGradingRequest": {
-        "type": "object",
-        "required": ["questions", "student_answers"],
-        "properties": {
-          "questions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Question"
-            }
-          },
-          "student_answers": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["A", "B", "C", "D"]
-            },
-            "description": "Array of student answers (A, B, C, or D)"
-          }
-        }
-      },
-      "DetailedResult": {
-        "type": "object",
-        "properties": {
-          "question_number": {
-            "type": "integer",
-            "description": "Question number (1-based)"
-          },
-          "student_answer": {
-            "type": "string",
-            "enum": ["A", "B", "C", "D"]
-          },
-          "correct_answer": {
-            "type": "string",
-            "enum": ["A", "B", "C", "D"]
-          },
-          "is_correct": {
-            "type": "boolean"
-          },
-          "explanation": {
-            "type": "string"
-          }
-        }
-      },
-      "MultipleChoiceGradingResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "grading_result": {
-            "type": "object",
-            "properties": {
-              "total_questions": {"type": "integer"},
-              "correct_answers": {"type": "integer"},
-              "score_percentage": {"type": "number", "format": "float"},
-              "detailed_results": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/DetailedResult"
-                }
-              },
-              "grade": {
-                "type": "string",
-                "enum": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
-              }
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GradingMetadata"
-          }
-        }
-      },
-      "EssayGradingRequest": {
-        "type": "object",
-        "required": ["essay_prompt", "student_essay"],
-        "properties": {
-          "essay_prompt": {
-            "$ref": "#/components/schemas/EssayPrompt"
-          },
-          "student_essay": {
-            "type": "string",
-            "description": "The student's essay text"
-          }
-        }
-      },
-      "DetailedScore": {
-        "type": "object",
-        "properties": {
-          "score": {"type": "integer"},
-          "max_score": {"type": "integer"},
-          "feedback": {"type": "string"}
-        }
-      },
-      "EssayGradingResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "grading_result": {
-            "type": "object",
-            "properties": {
-              "overall_score": {"type": "integer"},
-              "word_count": {"type": "integer"},
-              "detailed_scores": {
-                "type": "object",
-                "properties": {
-                  "content": {"$ref": "#/components/schemas/DetailedScore"},
-                  "organization": {"$ref": "#/components/schemas/DetailedScore"},
-                  "grammar": {"$ref": "#/components/schemas/DetailedScore"},
-                  "creativity": {"$ref": "#/components/schemas/DetailedScore"}
-                }
-              },
-              "overall_feedback": {"type": "string"},
-              "grade": {
-                "type": "string",
-                "enum": ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
-              }
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GradingMetadata"
-          }
-        }
-      },
-      "CompleteAssessmentRequest": {
-        "type": "object",
-        "required": ["subject", "topic", "type"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic within the subject"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["multiple_choice", "essay"],
-            "description": "Type of assessment to create"
-          }
-        }
-      },
-      "CompleteAssessmentResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "assessment": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": ["multiple_choice", "essay"]
-              },
-              "questions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/Question"
-                }
-              },
-              "essay_prompt": {
-                "$ref": "#/components/schemas/EssayPrompt"
-              },
-              "metadata": {
-                "$ref": "#/components/schemas/GenerationMetadata"
-              }
-            }
-          }
-        }
-      },
-      "GenerationMetadata": {
-        "type": "object",
-        "properties": {
-          "subject": {"type": "string"},
-          "topic": {"type": "string"},
-          "num_questions": {"type": "integer"},
-          "generated_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "GradingMetadata": {
-        "type": "object",
-        "properties": {
-          "graded_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "total_questions": {"type": "integer"},
-          "word_count": {"type": "integer"}
-        }
-      },
-      "ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "string",
-            "description": "Error message"
-          },
-          "usage": {
-            "$ref": "#/components/schemas/TokenUsageResponse"
-          }
-        }
-      },
-      "LessonPlanRequest": {
-        "type": "object",
-        "required": ["subject", "topic", "grade_level", "duration"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area",
-            "example": "Mathematics"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic within the subject",
-            "example": "Linear Equations"
-          },
-          "grade_level": {
-            "type": "string",
-            "description": "The grade level",
-            "example": "8th grade"
-          },
-          "duration": {
-            "type": "string",
-            "description": "Duration of the lesson (e.g., '45 minutes', '2 hours', '3 days', '1 week', '2 months')",
-            "example": "45 minutes"
-          }
-        }
-      },
-      "LessonPlanResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "lesson_plan": {
-            "type": "object",
-            "properties": {
-              "lesson_title": {"type": "string"},
-              "learning_objectives": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "curriculum_standards": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "standard_code": {"type": "string"},
-                    "description": {"type": "string"},
-                    "subject": {"type": "string"}
-                  }
-                }
-              },
-              "materials_needed": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "lesson_structure": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "phase": {"type": "string"},
-                    "duration": {"type": "string"},
-                    "activities": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "teacher_notes": {"type": "string"}
-                  }
-                }
-              },
-              "assessment_strategies": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "differentiation_strategies": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "cross_curricular_connections": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "subject": {"type": "string"},
-                    "connection": {"type": "string"}
-                  }
-                }
-              },
-              "estimated_prep_time": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "StandardsMappingRequest": {
-        "type": "object",
-        "required": ["subject", "topic", "grade_level"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area",
-            "example": "Science"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic",
-            "example": "Photosynthesis"
-          },
-          "grade_level": {
-            "type": "string",
-            "description": "The grade level",
-            "example": "7th grade"
-          }
-        }
-      },
-      "StandardsMappingResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "standards_map": {
-            "type": "object",
-            "properties": {
-              "subject": {"type": "string"},
-              "topic": {"type": "string"},
-              "grade_level": {"type": "string"},
-              "standards": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "standard_code": {"type": "string"},
-                    "standard_title": {"type": "string"},
-                    "description": {"type": "string"},
-                    "proficiency_levels": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "assessment_criteria": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    }
-                  }
-                }
-              },
-              "learning_progression": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "prerequisite_skills": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "current_skills": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "next_skills": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    }
-                  }
-                }
-              },
-              "cross_references": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "related_subject": {"type": "string"},
-                    "related_topic": {"type": "string"},
-                    "connection": {"type": "string"}
-                  }
-                }
-              }
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "ResourceCurationRequest": {
-        "type": "object",
-        "required": ["subject", "topic", "grade_level"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area",
-            "example": "English Literature"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic",
-            "example": "Shakespeare"
-          },
-          "grade_level": {
-            "type": "string",
-            "description": "The grade level",
-            "example": "9th grade"
-          },
-          "resource_types": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Types of resources to curate",
-            "default": ["videos", "articles", "interactive", "worksheets"],
-            "example": ["videos", "articles", "interactive"]
-          }
-        }
-      },
-      "ResourceCurationResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "resources": {
-            "type": "object",
-            "properties": {
-              "subject": {"type": "string"},
-              "topic": {"type": "string"},
-              "grade_level": {"type": "string"},
-              "curated_resources": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "title": {"type": "string"},
-                    "type": {"type": "string"},
-                    "url": {"type": "string"},
-                    "description": {"type": "string"},
-                    "grade_appropriateness": {"type": "string"},
-                    "learning_objectives": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "engagement_level": {"type": "string"},
-                    "accessibility_features": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "estimated_duration": {"type": "string"}
-                  }
-                }
-              },
-              "resource_categories": {
-                "type": "object",
-                "properties": {
-                  "primary_resources": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  },
-                  "supplementary_materials": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  },
-                  "assessment_tools": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  },
-                  "extension_activities": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  }
-                }
-              },
-              "curation_notes": {"type": "string"},
-              "last_updated": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "CrossCurricularRequest": {
-        "type": "object",
-        "required": ["subjects", "central_theme", "grade_level"],
-        "properties": {
-          "subjects": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "List of subjects to integrate",
-            "example": ["Mathematics", "Science", "Social Studies"]
-          },
-          "central_theme": {
-            "type": "string",
-            "description": "Central theme for the unit",
-            "example": "Environmental Sustainability"
-          },
-          "grade_level": {
-            "type": "string",
-            "description": "The grade level",
-            "example": "8th grade"
-          }
-        }
-      },
-      "CrossCurricularResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "unit_plan": {
-            "type": "object",
-            "properties": {
-              "unit_title": {"type": "string"},
-              "central_theme": {"type": "string"},
-              "subjects": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "grade_level": {"type": "string"},
-              "unit_overview": {"type": "string"},
-              "essential_questions": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "subject_integrations": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "subject": {"type": "string"},
-                    "lesson_focus": {"type": "string"},
-                    "key_concepts": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "activities": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    },
-                    "assessment": {"type": "string"}
-                  }
-                }
-              },
-              "project_based_learning": {
-                "type": "object",
-                "properties": {
-                  "project_title": {"type": "string"},
-                  "project_description": {"type": "string"},
-                  "learning_outcomes": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  },
-                  "timeline": {"type": "string"},
-                  "materials_needed": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                  },
-                  "assessment_rubric": {
-                    "type": "object",
-                    "properties": {
-                      "criteria": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                      },
-                      "scoring": {"type": "string"}
-                    }
-                  }
-                }
-              },
-              "weekly_schedule": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "week": {"type": "integer"},
-                    "focus": {"type": "string"},
-                    "activities": {
-                      "type": "array",
-                      "items": {"type": "string"}
-                    }
-                  }
-                }
-              },
-              "assessment_strategies": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
-              "estimated_duration": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/GenerationMetadata"
-          }
-        }
-      },
-      "CompletePackageRequest": {
-        "type": "object",
-        "required": ["subject", "topic", "grade_level", "duration"],
-        "properties": {
-          "subject": {
-            "type": "string",
-            "description": "The subject area",
-            "example": "Mathematics"
-          },
-          "topic": {
-            "type": "string",
-            "description": "The specific topic",
-            "example": "Algebra"
-          },
-          "grade_level": {
-            "type": "string",
-            "description": "The grade level",
-            "example": "8th grade"
-          },
-          "duration": {
-            "type": "string",
-            "description": "Duration of the lesson (e.g., '45 minutes', '2 hours', '3 days', '1 week', '2 months')",
-            "example": "45 minutes"
-          },
-          "include_resources": {
-            "type": "boolean",
-            "description": "Whether to include resource curation",
-            "default": true,
-            "example": true
-          }
-        }
-      },
-      "CompletePackageResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "curriculum_package": {
-            "type": "object",
-            "properties": {
-              "lesson_plan": {
-                "$ref": "#/components/schemas/LessonPlanResponse"
-              },
-              "standards_map": {
-                "$ref": "#/components/schemas/StandardsMappingResponse"
-              },
-              "resources": {
-                "$ref": "#/components/schemas/ResourceCurationResponse"
-              },
-              "metadata": {
-                "$ref": "#/components/schemas/GenerationMetadata"
-              }
-            }
-          }
-        }
-      },
-
-      "EnhancedAnnouncement": {
-        "type": "object",
-        "properties": {
-          "enhanced_title": {
-            "type": "string",
-            "description": "Enhanced, professional title"
-          },
-          "enhanced_message": {
-            "type": "string",
-            "description": "Enhanced, professional message body"
-          },
-          "key_highlights": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Key points from the announcement"
-          },
-          "call_to_action": {
-            "type": "string",
-            "description": "Clear action expected from audience"
-          },
-          "context_connections": {
-            "type": "string",
-            "description": "How this relates to previous announcements"
-          },
-          "tone_analysis": {
-            "type": "string",
-            "description": "Analysis of the professional tone used"
-          },
-          "estimated_reading_time": {
-            "type": "string",
-            "description": "Estimated reading time for the audience"
-          },
-          "accessibility_notes": {
-            "type": "string",
-            "description": "Notes for accessibility considerations"
-          }
-        }
-      },
-      "AnnouncementSuggestionsRequest": {
-        "type": "object",
-        "required": ["announcement_type", "target_audience"],
-        "properties": {
-          "announcement_type": {
-            "type": "string",
-            "description": "Type of announcement for suggestions",
-            "example": "Policy Update"
-          },
-          "target_audience": {
-            "type": "string",
-            "description": "Target audience for suggestions",
-            "example": "Faculty"
-          }
-        }
-      },
-      "AnnouncementSuggestions": {
-        "type": "object",
-        "properties": {
-          "title_suggestions": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Exactly 3 suggested title approaches",
-            "maxItems": 3,
-            "minItems": 3
-          },
-          "message_body_suggestions": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Exactly 3 suggested message body approaches",
-            "maxItems": 3,
-            "minItems": 3
-          },
-          "tone_suggestions": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Exactly 3 suggested tone approaches",
-            "maxItems": 3,
-            "minItems": 3
-          },
-          "context_considerations": {
-            "type": "string",
-            "description": "How to reference previous announcements"
-          },
-          "audience_specific_notes": {
-            "type": "string",
-            "description": "Tailored recommendations for audience"
-          }
-        }
-      },
-      "AnnouncementSuggestionsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "suggestions": {
-            "$ref": "#/components/schemas/AnnouncementSuggestions"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "announcement_type": {"type": "string"},
-              "target_audience": {"type": "string"},
-              "generated_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          }
-        }
-      },
-      "AnnouncementContextResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "context_summary": {
-            "type": "string",
-            "description": "Summary of recent announcements from database"
-          },
-          "context_count": {
-            "type": "integer",
-            "description": "Number of announcements in database"
-          },
-          "recent_announcements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "type": {"type": "string"},
-                "original_title": {"type": "string"},
-                "enhanced_title": {"type": "string"},
-                "enhanced_message": {"type": "string"},
-                "target_audience": {"type": "string"},
-                "tone": {"type": "string"},
-                "context_connections": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_announcements": {"type": "integer"},
-              "by_type": {
-                "type": "object",
-                "additionalProperties": {"type": "integer"}
-              },
-              "by_audience": {
-                "type": "object",
-                "additionalProperties": {"type": "integer"}
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "ContextClearResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "result": {
-            "type": "object",
-            "properties": {
-              "message": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "cleared_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "AnnouncementsByTypeResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "announcement_type": {
-            "type": "string",
-            "description": "The type that was filtered"
-          },
-          "announcements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "type": {"type": "string"},
-                "original_title": {"type": "string"},
-                "enhanced_title": {"type": "string"},
-                "enhanced_message": {"type": "string"},
-                "target_audience": {"type": "string"},
-                "tone": {"type": "string"},
-                "context_connections": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "count": {
-            "type": "integer",
-            "description": "Number of announcements returned"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "AnnouncementsByAudienceResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "target_audience": {
-            "type": "string",
-            "description": "The audience that was filtered"
-          },
-          "announcements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "type": {"type": "string"},
-                "original_title": {"type": "string"},
-                "enhanced_title": {"type": "string"},
-                "enhanced_message": {"type": "string"},
-                "target_audience": {"type": "string"},
-                "tone": {"type": "string"},
-                "context_connections": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "count": {
-            "type": "integer",
-            "description": "Number of announcements returned"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "AnnouncementStatsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_announcements": {
-                "type": "integer",
-                "description": "Total number of active announcements"
-              },
-              "by_type": {
-                "type": "object",
-                "description": "Count of announcements by type",
-                "additionalProperties": {"type": "integer"}
-              },
-              "by_audience": {
-                "type": "object",
-                "description": "Count of announcements by audience",
-                "additionalProperties": {"type": "integer"}
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "AnnouncementDeleteResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "message": {
-            "type": "string",
-            "description": "Success or failure message"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "deleted_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "CompleteAnnouncementRequest": {
-        "type": "object",
-        "required": ["title", "message_body"],
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "Original announcement title to enhance",
-            "example": "Meeting tomorrow"
-          },
-          "message_body": {
-            "type": "string",
-            "description": "Original announcement message to enhance",
-            "example": "Staff meeting at 2pm in conference room"
-          },
-          "announcement_type": {
-            "type": "string",
-            "description": "Type of announcement",
-            "enum": ["General Notice", "Academic Update", "Events", "Holiday/Closure", "PTM/Meetings"],
-            "default": "General Notice",
-            "example": "PTM/Meetings"
-          },
-          "target_audience": {
-            "type": "string",
-            "description": "Target audience for the announcement",
-            "enum": ["All", "Staff Members - Primary Wing", "Staff Members - Secondary Wing", "Teachers - Primary Wing", "Teachers - Secondary Wing", "Family - Primary Wing", "Family - Secondary Wing"],
-            "default": "All",
-            "example": "Teachers - Primary Wing"
-          },
-          "tone": {
-            "type": "string",
-            "description": "Desired tone for the announcement",
-            "default": "Professional",
-            "example": "Professional"
-          },
-          "max_title_length": {
-            "type": "integer",
-            "description": "Maximum characters for title",
-            "default": 20,
-            "minimum": 5,
-            "maximum": 100,
-            "example": 20
-          },
-          "max_message_length": {
-            "type": "integer",
-            "description": "Maximum characters for message",
-            "default": 400,
-            "minimum": 50,
-            "maximum": 1000,
-            "example": 400
-          },
-          "include_suggestions": {
-            "type": "boolean",
-            "description": "Whether to include suggestions for future announcements",
-            "default": false,
-            "example": false
-          }
-        }
-      },
-      "AnnouncementCreationResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "options": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string",
-                "description": "Numbered title and message pairs (title1, message1, title2, message2, title3, message3)"
-              },
-              "example": {
-                "title1": "PTM Meeting",
-                "message1": "Dear Parents, Parent Teacher Meeting scheduled for next week. Please mark your calendars and ensure your presence for discussing your child's progress."
-              }
-            },
-            "description": "Three different announcement options, each with numbered title and message keys",
-            "minItems": 3,
-            "maxItems": 3
-          }
-        }
-      },
-      "TitleEnhancementRequest": {
-        "type": "object",
-        "required": ["original_title"],
-        "properties": {
-          "original_title": {
-            "type": "string",
-            "description": "The title to enhance",
-            "example": "Meeting tomorrow"
-          },
-          "context_type": {
-            "type": "string",
-            "description": "Type of context",
-            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
-            "default": "general",
-            "example": "business"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain for context",
-            "default": "general",
-            "example": "professional"
-          },
-          "max_length": {
-            "type": "integer",
-            "description": "Maximum character length",
-            "minimum": 10,
-            "maximum": 200,
-            "default": 50,
-            "example": 40
-          },
-          "style_preference": {
-            "type": "string",
-            "description": "Preferred style",
-            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
-            "default": "professional",
-            "example": "professional"
-          }
-        }
-      },
-      "TitleRegenerationRequest": {
-        "type": "object",
-        "required": ["original_title"],
-        "properties": {
-          "original_title": {
-            "type": "string",
-            "description": "The title to enhance",
-            "example": "Meeting tomorrow"
-          },
-          "context_type": {
-            "type": "string",
-            "description": "Type of context",
-            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
-            "default": "general",
-            "example": "business"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain for context",
-            "default": "general",
-            "example": "professional"
-          },
-          "max_length": {
-            "type": "integer",
-            "description": "Maximum character length",
-            "minimum": 10,
-            "maximum": 200,
-            "default": 50,
-            "example": 40
-          },
-          "style_preference": {
-            "type": "string",
-            "description": "Preferred style",
-            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
-            "default": "professional",
-            "example": "creative"
-          },
-          "exclude_previous": {
-            "type": "boolean",
-            "description": "Whether to exclude previous suggestions",
-            "default": true,
-            "example": true
-          }
-        }
-      },
-      "TitleEnhancementResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "titles": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Array of 3 enhanced title suggestions",
-            "minItems": 3,
-            "maxItems": 3,
-            "example": [
-              "Upcoming collaboration session",
-              "Tomorrow's strategic meet-up",
-              "Quick meet tomorrow"
-            ]
-          }
-        }
-      },
-      "DomainSuggestionsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "suggestions": {
-            "type": "object",
-            "properties": {
-              "domain": {
-                "type": "string",
-                "example": "business"
-              },
-              "title_patterns": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Effective title patterns for the domain"
-              },
-              "style_recommendations": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Style recommendations for the domain"
-              },
-              "common_elements": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Common elements in domain titles"
-              },
-              "avoidance_tips": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Things to avoid in domain titles"
-              },
-              "domain_specific_notes": {
-                "type": "string",
-                "description": "Tailored recommendations for the domain"
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "domain": {"type": "string"},
-              "generated_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          }
-        }
-      },
-      "TitleContextResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "context_summary": {
-            "type": "string",
-            "description": "Summary of recent title enhancements"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain filter used"
-          },
-          "recent_enhancements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "original_title": {"type": "string"},
-                "enhanced_titles": {
-                  "type": "array",
-                  "items": {"type": "string"}
-                },
-                "context_type": {"type": "string"},
-                "domain": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_enhancements": {"type": "integer"},
-              "by_context_type": {
-                "type": "object",
-                "additionalProperties": {"type": "integer"}
-              },
-              "domain": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "TitleEnhancementsByTypeResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "context_type": {
-            "type": "string",
-            "description": "The context type that was filtered"
-          },
-          "domain": {
-            "type": "string",
-            "description": "The domain filter used"
-          },
-          "enhancements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "original_title": {"type": "string"},
-                "enhanced_titles": {
-                  "type": "array",
-                  "items": {"type": "string"}
-                },
-                "context_type": {"type": "string"},
-                "domain": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "count": {
-            "type": "integer",
-            "description": "Number of enhancements returned"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "TitleEnhancementStatsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain filter used"
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_enhancements": {
-                "type": "integer",
-                "description": "Total number of enhancements"
-              },
-              "by_context_type": {
-                "type": "object",
-                "description": "Count of enhancements by context type",
-                "additionalProperties": {"type": "integer"}
-              },
-              "domain": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "TitleEnhancementDeleteResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "message": {
-            "type": "string",
-            "description": "Success or failure message"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "deleted_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "MessageEnhancementRequest": {
-        "type": "object",
-        "required": ["original_message"],
-        "properties": {
-          "original_message": {
-            "type": "string",
-            "description": "The message to enhance",
-            "example": "Meeting tomorrow at 2pm"
-          },
-          "context_type": {
-            "type": "string",
-            "description": "Type of context",
-            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
-            "default": "general",
-            "example": "business"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain for context",
-            "default": "general",
-            "example": "professional"
-          },
-          "max_length": {
-            "type": "integer",
-            "description": "Maximum character length",
-            "minimum": 50,
-            "maximum": 2000,
-            "default": 500,
-            "example": 500
-          },
-          "style_preference": {
-            "type": "string",
-            "description": "Preferred style",
-            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
-            "default": "professional",
-            "example": "professional"
-          },
-          "tone": {
-            "type": "string",
-            "description": "Desired tone",
-            "enum": ["professional", "friendly", "formal", "casual", "enthusiastic", "serious", "encouraging"],
-            "default": "professional",
-            "example": "professional"
-          }
-        }
-      },
-      "MessageRegenerationRequest": {
-        "type": "object",
-        "required": ["original_message"],
-        "properties": {
-          "original_message": {
-            "type": "string",
-            "description": "The message to enhance",
-            "example": "Meeting tomorrow at 2pm"
-          },
-          "context_type": {
-            "type": "string",
-            "description": "Type of context",
-            "enum": ["general", "academic", "business", "creative", "technical", "marketing", "educational", "professional", "casual"],
-            "default": "general",
-            "example": "business"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain for context",
-            "default": "general",
-            "example": "professional"
-          },
-          "max_length": {
-            "type": "integer",
-            "description": "Maximum character length",
-            "minimum": 50,
-            "maximum": 2000,
-            "default": 500,
-            "example": 500
-          },
-          "style_preference": {
-            "type": "string",
-            "description": "Preferred style",
-            "enum": ["professional", "creative", "concise", "descriptive", "attention-grabbing", "formal", "casual", "technical"],
-            "default": "professional",
-            "example": "creative"
-          },
-          "tone": {
-            "type": "string",
-            "description": "Desired tone",
-            "enum": ["professional", "friendly", "formal", "casual", "enthusiastic", "serious", "encouraging"],
-            "default": "professional",
-            "example": "professional"
-          },
-          "exclude_previous": {
-            "type": "boolean",
-            "description": "Whether to exclude previous suggestions",
-            "default": true,
-            "example": true
-          }
-        }
-      },
-      "MessageEnhancementResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "messages": {
-            "type": "object",
-            "properties": {
-              "message1": {
-                "type": "string",
-                "description": "First enhanced message suggestion"
-              },
-              "message2": {
-                "type": "string",
-                "description": "Second enhanced message suggestion"
-              },
-              "message3": {
-                "type": "string",
-                "description": "Third enhanced message suggestion"
-              }
-            },
-            "description": "Object containing 3 enhanced message suggestions",
-            "example": {
-              "message1": "We are pleased to announce an important team meeting scheduled for tomorrow at 2:00 PM. This session will focus on key project updates and strategic planning discussions. All team members are required to attend as we will be covering critical information that impacts our upcoming deliverables and organizational objectives.",
-              "message2": "Please be advised that a mandatory team meeting has been scheduled for tomorrow at 2:00 PM. This meeting will address essential project milestones, upcoming deadlines, and collaborative opportunities. Your attendance is crucial as we will be discussing matters that directly affect our team's performance and success metrics.",
-              "message3": "Important Notice: Team meeting tomorrow at 2:00 PM. This comprehensive session will cover project status updates, resource allocation, and strategic initiatives. All team members must attend as we will be reviewing critical information that shapes our organizational direction and operational efficiency."
-            }
-          }
-        }
-      },
-      "MessageDomainSuggestionsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "suggestions": {
-            "type": "object",
-            "properties": {
-              "domain": {
-                "type": "string",
-                "example": "business"
-              },
-              "message_patterns": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Effective message patterns for the domain"
-              },
-              "style_recommendations": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Style recommendations for the domain"
-              },
-              "common_elements": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Common elements in domain messages"
-              },
-              "avoidance_tips": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Things to avoid in domain messages"
-              },
-              "domain_specific_notes": {
-                "type": "string",
-                "description": "Tailored recommendations for the domain"
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "domain": {"type": "string"},
-              "generated_at": {
-                "type": "string",
-                "format": "date-time"
-              }
-            }
-          }
-        }
-      },
-      "MessageContextResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "context_summary": {
-            "type": "string",
-            "description": "Summary of recent message enhancements"
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain filter used"
-          },
-          "recent_enhancements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "original_message": {"type": "string"},
-                "enhanced_messages": {
-                  "type": "array",
-                  "items": {"type": "string"}
-                },
-                "context_type": {"type": "string"},
-                "domain": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_enhancements": {"type": "integer"},
-              "by_context_type": {
-                "type": "object",
-                "additionalProperties": {"type": "integer"}
-              },
-              "domain": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "MessageEnhancementsByTypeResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "context_type": {
-            "type": "string",
-            "description": "The context type that was filtered"
-          },
-          "domain": {
-            "type": "string",
-            "description": "The domain filter used"
-          },
-          "enhancements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {"type": "integer"},
-                "original_message": {"type": "string"},
-                "enhanced_messages": {
-                  "type": "array",
-                  "items": {"type": "string"}
-                },
-                "context_type": {"type": "string"},
-                "domain": {"type": "string"},
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            }
-          },
-          "count": {
-            "type": "integer",
-            "description": "Number of enhancements returned"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "MessageEnhancementStatsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "domain": {
-            "type": "string",
-            "description": "Domain filter used"
-          },
-          "stats": {
-            "type": "object",
-            "properties": {
-              "total_enhancements": {
-                "type": "integer",
-                "description": "Total number of enhancements"
-              },
-              "by_context_type": {
-                "type": "object",
-                "description": "Count of enhancements by context type",
-                "additionalProperties": {"type": "integer"}
-              },
-              "domain": {"type": "string"}
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "MessageEnhancementDeleteResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "message": {
-            "type": "string",
-            "description": "Success or failure message"
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "deleted_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "LLMUsageSummaryResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              },
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time",
-                "description": "Timestamp when data was retrieved"
-              },
-              "tracking_active": {
-                "type": "boolean",
-                "description": "Whether LLM usage tracking is active"
-              }
-            }
-          },
-          "usage_summary": {
-            "type": "object",
-            "properties": {
-              "current_day": {
-                "type": "object",
-                "properties": {
-                  "date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "Current date in YYYY-MM-DD format"
-                  },
-                  "text_requests": {
-                    "type": "integer",
-                    "description": "Number of text generation requests"
-                  },
-                  "image_requests": {
-                    "type": "integer",
-                    "description": "Number of image generation requests"
-                  },
-                  "tokens_used": {
-                    "type": "integer",
-                    "description": "Total tokens used"
-                  },
-                  "cost_usd": {
-                    "type": "number",
-                    "format": "float",
-                    "description": "Total cost in USD"
-                  },
-                  "tokens_remaining": {
-                    "type": "integer",
-                    "description": "Tokens remaining for the day"
-                  },
-                  "requests_by_type": {
-                    "type": "object",
-                    "description": "Breakdown of requests by type",
-                    "additionalProperties": {"type": "integer"}
-                  }
-                }
-              },
-              "current_month": {
-                "type": "object",
-                "properties": {
-                  "month": {
-                    "type": "string",
-                    "description": "Current month in YYYY-MM format"
-                  },
-                  "text_requests": {
-                    "type": "integer",
-                    "description": "Number of text generation requests"
-                  },
-                  "image_requests": {
-                    "type": "integer",
-                    "description": "Number of image generation requests"
-                  },
-                  "tokens_used": {
-                    "type": "integer",
-                    "description": "Total tokens used"
-                  },
-                  "cost_usd": {
-                    "type": "number",
-                    "format": "float",
-                    "description": "Total cost in USD"
-                  }
-                }
-              },
-              "total_stats": {
-                "type": "object",
-                "properties": {
-                  "total_text_requests": {
-                    "type": "integer",
-                    "description": "Total text requests across all time"
-                  },
-                  "total_image_requests": {
-                    "type": "integer",
-                    "description": "Total image requests across all time"
-                  },
-                  "total_tokens_used": {
-                    "type": "integer",
-                    "description": "Total tokens used across all time"
-                  },
-                  "total_cost_usd": {
-                    "type": "number",
-                    "format": "float",
-                    "description": "Total cost in USD across all time"
-                  },
-                  "first_usage_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "Date of first usage"
-                  },
-                  "last_usage_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "Date of last usage"
-                  }
-                }
-              },
-              "estimated_monthly_cost": {
-                "type": "number",
-                "format": "float",
-                "description": "Estimated monthly cost based on current usage patterns"
-              },
-              "usage_trends": {
-                "type": "object",
-                "properties": {
-                  "daily_averages": {
-                    "type": "object",
-                    "description": "Average daily usage statistics",
-                    "additionalProperties": {"type": "number"}
-                  },
-                  "peak_usage_days": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "format": "date"
-                    },
-                    "description": "Days with highest usage"
-                  },
-                  "cost_trends": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "date": {"type": "string", "format": "date"},
-                        "cost": {"type": "number", "format": "float"}
-                      }
-                    },
-                    "description": "Cost trends over time"
-                  }
-                }
-              },
-              "usage_insights": {
-                "type": "object",
-                "properties": {
-                  "most_used_feature": {
-                    "type": "string",
-                    "description": "Most frequently used feature"
-                  },
-                  "peak_usage_time": {
-                    "type": "string",
-                    "description": "Peak usage time of day"
-                  },
-                  "cost_efficiency": {
-                    "type": "string",
-                    "description": "Cost efficiency rating"
-                  },
-                  "usage_growth": {
-                    "type": "string",
-                    "description": "Usage growth trend"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "LLMDailyUsageResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "date": {
-            "type": "string",
-            "format": "date",
-            "description": "Requested date"
-          },
-          "usage_data": {
-            "type": "object",
-            "properties": {
-              "text_requests": {
-                "type": "integer",
-                "description": "Number of text generation requests"
-              },
-              "image_requests": {
-                "type": "integer",
-                "description": "Number of image generation requests"
-              },
-              "tokens_used": {
-                "type": "integer",
-                "description": "Total tokens used"
-              },
-              "cost_usd": {
-                "type": "number",
-                "format": "float",
-                "description": "Total cost in USD"
-              },
-              "requests_by_type": {
-                "type": "object",
-                "description": "Breakdown of requests by type",
-                "additionalProperties": {"type": "integer"}
-              },
-              "peak_hour": {
-                "type": "string",
-                "description": "Hour with highest usage (HH:MM format)"
-              },
-              "requests_timeline": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "hour": {"type": "string"},
-                    "requests": {"type": "integer"}
-                  }
-                },
-                "description": "Hourly breakdown of requests"
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "LLMMonthlyUsageResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "month": {
-            "type": "string",
-            "description": "Requested month in YYYY-MM format"
-          },
-          "usage_data": {
-            "type": "object",
-            "properties": {
-              "text_requests": {
-                "type": "integer",
-                "description": "Number of text generation requests"
-              },
-              "image_requests": {
-                "type": "integer",
-                "description": "Number of image generation requests"
-              },
-              "tokens_used": {
-                "type": "integer",
-                "description": "Total tokens used"
-              },
-              "cost_usd": {
-                "type": "number",
-                "format": "float",
-                "description": "Total cost in USD"
-              },
-              "avg_daily_requests": {
-                "type": "number",
-                "format": "float",
-                "description": "Average daily requests"
-              },
-              "peak_day": {
-                "type": "string",
-                "format": "date",
-                "description": "Day with highest usage"
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "LLMUsageTrendsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "trends": {
-            "type": "object",
-            "properties": {
-              "daily_averages": {
-                "type": "object",
-                "description": "Average daily usage by day of week",
-                "additionalProperties": {"type": "number"}
-              },
-              "peak_usage_days": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "date": {"type": "string", "format": "date"},
-                    "usage": {"type": "number", "format": "float"}
-                  }
-                },
-                "description": "Days with highest usage"
-              },
-              "cost_trends": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "date": {"type": "string", "format": "date"},
-                    "cost": {"type": "number", "format": "float"}
-                  }
-                },
-                "description": "Cost trends over time"
-              },
-              "feature_usage": {
-                "type": "object",
-                "description": "Usage breakdown by feature type",
-                "additionalProperties": {"type": "integer"}
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      },
-      "LLMUsageInsightsResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          },
-          "insights": {
-            "type": "object",
-            "properties": {
-              "most_used_feature": {
-                "type": "string",
-                "description": "Most frequently used feature"
-              },
-              "peak_usage_time": {
-                "type": "string",
-                "description": "Peak usage time of day"
-              },
-              "cost_efficiency": {
-                "type": "string",
-                "description": "Cost efficiency rating"
-              },
-              "usage_growth": {
-                "type": "string",
-                "description": "Usage growth trend"
-              },
-              "recommendations": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "description": "AI-generated recommendations for optimization"
-              },
-              "cost_projections": {
-                "type": "object",
-                "properties": {
-                  "next_month": {
-                    "type": "number",
-                    "format": "float",
-                    "description": "Projected cost for next month"
-                  },
-                  "next_quarter": {
-                    "type": "number",
-                    "format": "float",
-                    "description": "Projected cost for next quarter"
-                  }
-                }
-              }
-            }
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "database_connected": {
-                "type": "boolean",
-                "description": "Database connection status"
-              }
-            }
-          }
-        }
-      }
-    }
-  },
   "tags": [
     {
       "name": "System",
       "description": "System health and monitoring endpoints"
-    },
-    {
-      "name": "Assessment Generation",
-      "description": "Endpoints for generating assessments and questions"
-    },
-    {
-      "name": "Assessment Grading",
-      "description": "Endpoints for grading assessments and providing feedback"
-    },
-    {
-      "name": "Curriculum Assistant",
-      "description": "Endpoints for lesson planning, standards mapping, and resource curation"
-    },
-    {
-      "name": "Announcement Management",
-      "description": "Endpoints for creating enhanced announcements with professional tone and context management"
     },
     {
       "name": "Title Enhancement",
@@ -4728,6 +1150,10 @@
     {
       "name": "Message Enhancement",
       "description": "Endpoints for enhancing message bodies with AI-powered suggestions and context management"
+    },
+    {
+      "name": "Announcement Management",
+      "description": "Endpoints for creating enhanced announcements with professional tone and context management"
     },
     {
       "name": "LLM Usage Tracking",

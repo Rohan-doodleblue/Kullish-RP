@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import threading
-from sqlalchemy import create_engine, text, Column, Integer, String, Text, DateTime, Boolean, Float
+from sqlalchemy import create_engine, text, Column, Integer, String, Text, DateTime, Boolean, Float, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import pg8000
@@ -47,6 +47,7 @@ class AnnouncementContext(Base):
     __tablename__ = 'announcement_context'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
     announcement_type = Column(String(100), nullable=False)
     original_title = Column(String(500), nullable=False)
     original_message = Column(Text, nullable=False)
@@ -63,6 +64,7 @@ class TitleEnhancementContext(Base):
     __tablename__ = 'title_enhancement_context'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
     original_title = Column(String(500), nullable=False)
     enhanced_titles = Column(Text, nullable=False)  # JSON array of enhanced titles
     context_type = Column(String(100), nullable=False)
@@ -75,6 +77,7 @@ class MessageEnhancementContext(Base):
     __tablename__ = 'message_enhancement_context'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
     original_message = Column(Text, nullable=False)
     enhanced_messages = Column(Text, nullable=False)  # JSON array of enhanced messages
     context_type = Column(String(100), nullable=False)
@@ -87,7 +90,8 @@ class LLMUsageDaily(Base):
     __tablename__ = 'llm_usage_daily'
     
     id = Column(Integer, primary_key=True)
-    date = Column(String(10), nullable=False, unique=True)  # YYYY-MM-DD format
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
+    date = Column(String(10), nullable=False)  # YYYY-MM-DD format
     text_requests = Column(Integer, default=0)
     image_requests = Column(Integer, default=0)
     tokens_used = Column(Integer, default=0)
@@ -97,13 +101,17 @@ class LLMUsageDaily(Base):
     requests_timeline = Column(Text)  # JSON array of request timeline
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Composite unique constraint for user_id and date
+    __table_args__ = (UniqueConstraint('user_id', 'date', name='uq_user_date'),)
 
 class LLMUsageMonthly(Base):
     """SQLAlchemy model for monthly LLM usage tracking"""
     __tablename__ = 'llm_usage_monthly'
     
     id = Column(Integer, primary_key=True)
-    month = Column(String(7), nullable=False, unique=True)  # YYYY-MM format
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
+    month = Column(String(7), nullable=False)  # YYYY-MM format
     text_requests = Column(Integer, default=0)
     image_requests = Column(Integer, default=0)
     tokens_used = Column(Integer, default=0)
@@ -112,12 +120,16 @@ class LLMUsageMonthly(Base):
     peak_day = Column(String(10))  # YYYY-MM-DD format
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Composite unique constraint for user_id and month
+    __table_args__ = (UniqueConstraint('user_id', 'month', name='uq_user_month'),)
 
 class LLMUsageTotal(Base):
     """SQLAlchemy model for total LLM usage statistics"""
     __tablename__ = 'llm_usage_total'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(String(100), nullable=False, unique=True, index=True)  # User identifier from JWT
     total_text_requests = Column(Integer, default=0)
     total_image_requests = Column(Integer, default=0)
     total_tokens_used = Column(Integer, default=0)
@@ -132,6 +144,7 @@ class LLMUsageTrends(Base):
     __tablename__ = 'llm_usage_trends'
     
     id = Column(Integer, primary_key=True)
+    user_id = Column(String(100), nullable=False, index=True)  # User identifier from JWT
     trend_type = Column(String(50), nullable=False)  # 'daily_averages', 'peak_usage_days', 'cost_trends'
     trend_data = Column(Text, nullable=False)  # JSON string of trend data
     analysis_date = Column(DateTime, default=datetime.utcnow)
@@ -159,8 +172,12 @@ class DatabaseManager:
             SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
             self.SessionLocal = SessionLocal
             
-            # Initialize database
-            self.init_database()
+            # Check if user_id columns exist, if not run migration
+            if not self._check_user_id_columns_exist():
+                logger.info("User ID columns not found. Running migration...")
+                self.migrate_database_for_jwt()
+            else:
+                logger.info("User ID columns already exist. Skipping migration.")
             
             logger.info("Database manager initialized successfully")
             
@@ -178,6 +195,78 @@ class DatabaseManager:
             logger.error(f"Failed to initialize database tables: {e}")
             raise
     
+    def migrate_database_for_jwt(self):
+        """Migrate database to add user_id columns for JWT authentication"""
+        try:
+            logger.info("🚀 Starting database migration for JWT authentication...")
+            
+            with self.engine.connect() as connection:
+                # Start transaction
+                trans = connection.begin()
+                
+                try:
+                    # Drop existing tables to recreate with user_id columns
+                    logger.info("Dropping existing tables...")
+                    connection.execute(text("DROP TABLE IF EXISTS llm_usage_trends CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS llm_usage_total CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS llm_usage_monthly CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS llm_usage_daily CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS message_enhancement_context CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS title_enhancement_context CASCADE"))
+                    connection.execute(text("DROP TABLE IF EXISTS announcement_context CASCADE"))
+                    
+                    # Commit the drops
+                    trans.commit()
+                    logger.info("✅ Existing tables dropped successfully")
+                    
+                    # Recreate tables with new schema
+                    logger.info("Creating tables with user_id columns...")
+                    Base.metadata.create_all(bind=self.engine)
+                    logger.info("✅ Tables recreated with user_id columns successfully")
+                    
+                    return True
+                    
+                except Exception as e:
+                    trans.rollback()
+                    logger.error(f"Migration failed: {e}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Database migration failed: {e}")
+            return False
+    
+    def _check_user_id_columns_exist(self) -> bool:
+        """Check if user_id columns exist in all tables"""
+        try:
+            with self.engine.connect() as connection:
+                # Check if user_id column exists in announcement_context table
+                result = connection.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'announcement_context' 
+                    AND column_name = 'user_id';
+                """))
+                
+                if not result.fetchone():
+                    return False
+                
+                # Check if user_id column exists in llm_usage_daily table
+                result = connection.execute(text("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'llm_usage_daily' 
+                    AND column_name = 'user_id';
+                """))
+                
+                if not result.fetchone():
+                    return False
+                
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to check user_id columns: {e}")
+            return False
+    
     def test_connection(self) -> bool:
         """Test database connection"""
         try:
@@ -189,15 +278,16 @@ class DatabaseManager:
             logger.error(f"Database connection test failed: {e}")
             return False
     
-    def add_announcement_context(self, announcement_type: str, original_title: str, 
-                                original_message: str, enhanced_title: str, 
-                                enhanced_message: str, target_audience: str, 
-                                tone: str, context_connections: str = None) -> bool:
+    def add_announcement_context(self, user_id: str, announcement_type: str, original_title: str, 
+                             original_message: str, enhanced_title: str, 
+                             enhanced_message: str, target_audience: str, 
+                             tone: str, context_connections: str = None) -> bool:
         """Add announcement to context database"""
         try:
             session = self.SessionLocal()
             
             announcement = AnnouncementContext(
+                user_id=user_id,
                 announcement_type=announcement_type,
                 original_title=original_title,
                 original_message=original_message,
@@ -222,12 +312,13 @@ class DatabaseManager:
                 session.close()
             return False
     
-    def get_recent_announcements(self, limit: int = 5) -> List[Dict]:
+    def get_recent_announcements(self, user_id: str, limit: int = 5) -> List[Dict]:
         """Get recent announcements from database"""
         try:
             session = self.SessionLocal()
             
             announcements = session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .order_by(AnnouncementContext.created_at.desc())\
                 .limit(limit)\
@@ -256,12 +347,13 @@ class DatabaseManager:
                 session.close()
             return []
     
-    def get_announcements_by_type(self, announcement_type: str, limit: int = 5) -> List[Dict]:
+    def get_announcements_by_type(self, user_id: str, announcement_type: str, limit: int = 5) -> List[Dict]:
         """Get announcements by type"""
         try:
             session = self.SessionLocal()
             
             announcements = session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.announcement_type == announcement_type)\
                 .filter(AnnouncementContext.is_active == True)\
                 .order_by(AnnouncementContext.created_at.desc())\
@@ -291,12 +383,13 @@ class DatabaseManager:
                 session.close()
             return []
     
-    def get_announcements_by_audience(self, target_audience: str, limit: int = 5) -> List[Dict]:
+    def get_announcements_by_audience(self, user_id: str, target_audience: str, limit: int = 5) -> List[Dict]:
         """Get announcements by target audience"""
         try:
             session = self.SessionLocal()
             
             announcements = session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.target_audience == target_audience)\
                 .filter(AnnouncementContext.is_active == True)\
                 .order_by(AnnouncementContext.created_at.desc())\
@@ -326,10 +419,10 @@ class DatabaseManager:
                 session.close()
             return []
     
-    def get_context_summary(self, limit: int = 3) -> str:
+    def get_context_summary(self, user_id: str, limit: int = 3) -> str:
         """Get a summary of recent announcements for AI context"""
         try:
-            recent_announcements = self.get_recent_announcements(limit)
+            recent_announcements = self.get_recent_announcements(user_id, limit)
             
             if not recent_announcements:
                 return "No previous announcements."
@@ -349,19 +442,21 @@ class DatabaseManager:
             logger.error(f"Failed to get context summary: {e}")
             return "No previous announcements."
     
-    def get_announcement_stats(self) -> Dict[str, Any]:
+    def get_announcement_stats(self, user_id: str) -> Dict[str, Any]:
         """Get announcement statistics"""
         try:
             session = self.SessionLocal()
             
             # Total announcements
             total_count = session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .count()
             
             # Count by type
             type_counts = {}
             types = session.query(AnnouncementContext.announcement_type)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .distinct()\
                 .all()
@@ -369,6 +464,7 @@ class DatabaseManager:
             for type_tuple in types:
                 announcement_type = type_tuple[0]
                 count = session.query(AnnouncementContext)\
+                    .filter(AnnouncementContext.user_id == user_id)\
                     .filter(AnnouncementContext.announcement_type == announcement_type)\
                     .filter(AnnouncementContext.is_active == True)\
                     .count()
@@ -377,6 +473,7 @@ class DatabaseManager:
             # Count by audience
             audience_counts = {}
             audiences = session.query(AnnouncementContext.target_audience)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .distinct()\
                 .all()
@@ -384,6 +481,7 @@ class DatabaseManager:
             for audience_tuple in audiences:
                 audience = audience_tuple[0]
                 count = session.query(AnnouncementContext)\
+                    .filter(AnnouncementContext.user_id == user_id)\
                     .filter(AnnouncementContext.target_audience == audience)\
                     .filter(AnnouncementContext.is_active == True)\
                     .count()
@@ -407,13 +505,14 @@ class DatabaseManager:
                 "by_audience": {}
             }
     
-    def clear_context(self) -> bool:
+    def clear_context(self, user_id: str) -> bool:
         """Clear all announcement context (soft delete)"""
         try:
             session = self.SessionLocal()
             
             # Soft delete by setting is_active to False
             session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .update({"is_active": False})
             
@@ -430,12 +529,13 @@ class DatabaseManager:
                 session.close()
             return False
     
-    def delete_announcement(self, announcement_id: int) -> bool:
+    def delete_announcement(self, user_id: str, announcement_id: int) -> bool:
         """Delete specific announcement (soft delete)"""
         try:
             session = self.SessionLocal()
             
             announcement = session.query(AnnouncementContext)\
+                .filter(AnnouncementContext.user_id == user_id)\
                 .filter(AnnouncementContext.id == announcement_id)\
                 .filter(AnnouncementContext.is_active == True)\
                 .first()
@@ -460,7 +560,7 @@ class DatabaseManager:
 
     # Title Enhancement Methods
     
-    def add_title_context(self, original_title: str, enhanced_titles: List[str], 
+    def add_title_context(self, user_id: str, original_title: str, enhanced_titles: List[str], 
                          context_type: str = "title_enhancement", 
                          domain: str = "general") -> bool:
         """Add title enhancement context to database"""
@@ -472,6 +572,7 @@ class DatabaseManager:
             
             # Create new title enhancement context
             title_context = TitleEnhancementContext(
+                user_id=user_id,
                 original_title=original_title,
                 enhanced_titles=enhanced_titles_json,
                 context_type=context_type,
@@ -492,13 +593,14 @@ class DatabaseManager:
                 session.close()
             return False
     
-    def get_title_context_summary(self, domain: str = "general", limit: int = 3) -> str:
+    def get_title_context_summary(self, user_id: str, domain: str = "general", limit: int = 3) -> str:
         """Get a summary of recent title enhancements for context"""
         try:
             session = self.SessionLocal()
             
             # Get recent title enhancements for the domain
             recent_enhancements = session.query(TitleEnhancementContext)\
+                .filter(TitleEnhancementContext.user_id == user_id)\
                 .filter(TitleEnhancementContext.domain == domain)\
                 .filter(TitleEnhancementContext.is_active == True)\
                 .order_by(TitleEnhancementContext.created_at.desc())\
@@ -709,7 +811,7 @@ class DatabaseManager:
 
     # Message Enhancement Context Methods
     
-    def add_message_context(self, original_message: str, enhanced_messages: List[str], 
+    def add_message_context(self, user_id: str, original_message: str, enhanced_messages: List[str], 
                           context_type: str = "message_enhancement", 
                           domain: str = "general") -> bool:
         """Add message enhancement to database context"""
@@ -721,6 +823,7 @@ class DatabaseManager:
             
             # Create new message enhancement context
             message_context = MessageEnhancementContext(
+                user_id=user_id,
                 original_message=original_message,
                 enhanced_messages=enhanced_messages_json,
                 context_type=context_type,
@@ -741,12 +844,13 @@ class DatabaseManager:
                 session.close()
             return False
     
-    def get_message_context_summary(self, domain: str = "general", limit: int = 3) -> str:
+    def get_message_context_summary(self, user_id: str, domain: str = "general", limit: int = 3) -> str:
         """Get a summary of recent message enhancements for context"""
         try:
             session = self.SessionLocal()
             
             recent_messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.user_id == user_id)\
                 .filter(MessageEnhancementContext.domain == domain)\
                 .filter(MessageEnhancementContext.is_active == True)\
                 .order_by(MessageEnhancementContext.created_at.desc())\
@@ -774,12 +878,13 @@ class DatabaseManager:
                 session.close()
             return "Error retrieving message context summary."
     
-    def get_recent_message_enhancements(self, domain: str = "general", limit: int = 5) -> List[Dict]:
+    def get_recent_message_enhancements(self, user_id: str, domain: str = "general", limit: int = 5) -> List[Dict]:
         """Get recent message enhancements from database"""
         try:
             session = self.SessionLocal()
             
             recent_messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.user_id == user_id)\
                 .filter(MessageEnhancementContext.domain == domain)\
                 .filter(MessageEnhancementContext.is_active == True)\
                 .order_by(MessageEnhancementContext.created_at.desc())\
@@ -812,12 +917,13 @@ class DatabaseManager:
                 session.close()
             return []
     
-    def get_message_enhancements_by_type(self, context_type: str, domain: str = "general", limit: int = 5) -> List[Dict]:
+    def get_message_enhancements_by_type(self, user_id: str, context_type: str, domain: str = "general", limit: int = 5) -> List[Dict]:
         """Get message enhancements filtered by context type"""
         try:
             session = self.SessionLocal()
             
             messages = session.query(MessageEnhancementContext)\
+                .filter(MessageEnhancementContext.user_id == user_id)\
                 .filter(MessageEnhancementContext.context_type == context_type)\
                 .filter(MessageEnhancementContext.domain == domain)\
                 .filter(MessageEnhancementContext.is_active == True)\
@@ -967,7 +1073,7 @@ class DatabaseManager:
 
     # LLM Usage Tracking Methods
     
-    def add_llm_text_usage(self, tokens_used: int, cost_usd: float, request_type: str = "text_generation") -> bool:
+    def add_llm_text_usage(self, user_id: str, tokens_used: int, cost_usd: float, request_type: str = "text_generation") -> bool:
         """Add text generation usage to database"""
         try:
             session = self.SessionLocal()
@@ -977,6 +1083,7 @@ class DatabaseManager:
             
             # Update or create daily usage
             daily_usage = session.query(LLMUsageDaily)\
+                .filter(LLMUsageDaily.user_id == user_id)\
                 .filter(LLMUsageDaily.date == today)\
                 .first()
             
@@ -1013,6 +1120,7 @@ class DatabaseManager:
             else:
                 # Create new daily usage record
                 daily_usage = LLMUsageDaily(
+                    user_id=user_id,
                     date=today,
                     text_requests=1,
                     image_requests=0,
@@ -1031,6 +1139,7 @@ class DatabaseManager:
             
             # Update or create monthly usage
             monthly_usage = session.query(LLMUsageMonthly)\
+                .filter(LLMUsageMonthly.user_id == user_id)\
                 .filter(LLMUsageMonthly.month == month)\
                 .first()
             
@@ -1041,6 +1150,7 @@ class DatabaseManager:
                 monthly_usage.updated_at = datetime.utcnow()
             else:
                 monthly_usage = LLMUsageMonthly(
+                    user_id=user_id,
                     month=month,
                     text_requests=1,
                     image_requests=0,
@@ -1050,7 +1160,9 @@ class DatabaseManager:
                 session.add(monthly_usage)
             
             # Update total stats
-            total_stats = session.query(LLMUsageTotal).first()
+            total_stats = session.query(LLMUsageTotal)\
+                .filter(LLMUsageTotal.user_id == user_id)\
+                .first()
             if total_stats:
                 total_stats.total_text_requests += 1
                 total_stats.total_tokens_used += tokens_used
@@ -1062,6 +1174,7 @@ class DatabaseManager:
                     total_stats.first_usage_date = today
             else:
                 total_stats = LLMUsageTotal(
+                    user_id=user_id,
                     total_text_requests=1,
                     total_image_requests=0,
                     total_tokens_used=tokens_used,

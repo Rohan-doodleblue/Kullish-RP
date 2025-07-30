@@ -13,6 +13,8 @@ from src.standard_datascience_project.utils.save_load import load_model, parse_t
 import pandas as pd
 import numpy as np
 import threading
+import jwt
+from functools import wraps
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+# JWT Configuration - Frontend team handles token validation
+# We only extract user info from the token
 CORS(app)  # Enable CORS for frontend integration
 
 # Swagger configuration
@@ -42,6 +46,59 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 # Import configuration
 from config import Config
+
+# JWT Authentication Functions
+def token_required(f):
+    """Decorator to require JWT token authentication"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        # Get token from Authorization header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]  # Bearer <token>
+            except IndexError:
+                return jsonify({'error': 'Invalid token format'}), 401
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            # Decode token without verification to extract user info
+            # Frontend team will handle proper JWT validation
+            data = jwt.decode(token, options={"verify_signature": False})
+            current_user_id = str(data.get('user_id', 'unknown'))  # Convert to string
+            current_user_email = data.get('email', '')
+            
+            # Debug logging
+            logger.info(f"JWT token data: {data}")
+            logger.info(f"Extracted user_id: {current_user_id}")
+            
+            # Add user info to request context
+            request.current_user_id = current_user_id
+            request.current_user_email = current_user_email
+            
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token format'}), 401
+        
+        return f(*args, **kwargs)
+    
+    return decorated
+
+def get_current_user_id():
+    """Get current user ID from request context"""
+    user_id = getattr(request, 'current_user_id', None)
+    if user_id is None:
+        # Fallback to a default user ID for testing
+        logger.warning("No user_id found in request context, using default")
+        return "default_user"
+    return user_id
+
+def get_current_user_email():
+    """Get current user email from request context"""
+    return getattr(request, 'current_user_email', '')
 
 # Initialize OpenAI client
 client = OpenAI(api_key=Config.OPENAI_API_KEY)
@@ -659,10 +716,11 @@ class AnnouncementGenerator:
     
     def add_to_context(self, announcement_type: str, original_title: str, original_message: str, 
                       enhanced_title: str, enhanced_message: str, target_audience: str, 
-                      tone: str, context_connections: str = None):
+                      tone: str, context_connections: str = None, user_id: str = None):
         """Add announcement to database context for better continuity"""
         try:
             success = db_manager.add_announcement_context(
+                user_id=user_id,
                 announcement_type=announcement_type,
                 original_title=original_title,
                 original_message=original_message,
@@ -679,17 +737,17 @@ class AnnouncementGenerator:
         except Exception as e:
             logger.error(f"Error adding to context: {e}")
     
-    def get_context_summary(self) -> str:
+    def get_context_summary(self, user_id: str = None) -> str:
         """Get a summary of recent announcements for context from database"""
         try:
-            return db_manager.get_context_summary(limit=3)
+            return db_manager.get_context_summary(user_id=user_id, limit=3)
         except Exception as e:
             logger.error(f"Error getting context summary: {e}")
             return "No previous announcements."
     
     def create_enhanced_announcement(self, title: str, message_body: str, announcement_type: str = "General Notice", 
                                    target_audience: str = "All", tone: str = "Professional", 
-                                   max_title_length: int = 20, max_message_length: int = 400) -> Dict:
+                                   max_title_length: int = 20, max_message_length: int = 400, user_id: str = None) -> Dict:
         """Create an enhanced announcement with improved title and professional message body"""
         
         # Validate announcement type
@@ -710,7 +768,7 @@ class AnnouncementGenerator:
             target_audience = "All"  # Default fallback
         
         # Build context-aware prompt
-        context_summary = self.get_context_summary()
+        context_summary = self.get_context_summary(user_id=user_id)
         
         prompt = f"""
         Create THREE different enhanced announcement options for a SCHOOL environment. This is for school administrators to communicate with staff, teachers, and families. Consider the context of recent announcements to maintain consistency and avoid repetition.
@@ -834,13 +892,14 @@ class AnnouncementGenerator:
                     enhanced_message=first_option['message'],
                     target_audience=target_audience,
                     tone=tone,
-                    context_connections=None
+                    context_connections=None,
+                    user_id=user_id
                 )
             
             # Track LLM usage for announcement creation
             tokens_used = response.usage.total_tokens
             estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-            track_llm_text_usage(tokens_used, estimated_cost, "announcement_creation")
+            track_llm_text_usage(user_id, tokens_used, estimated_cost, "announcement_creation")
             
             return enhanced_announcement
             
@@ -933,10 +992,11 @@ class TitleEnhancer:
     
     def add_title_to_context(self, original_title: str, enhanced_titles: List[str], 
                            context_type: str = "title_enhancement", 
-                           domain: str = "general"):
+                           domain: str = "general", user_id: str = None):
         """Add enhanced titles to database context for better continuity"""
         try:
             success = db_manager.add_title_context(
+                user_id=user_id,
                 original_title=original_title,
                 enhanced_titles=enhanced_titles,
                 context_type=context_type,
@@ -949,17 +1009,17 @@ class TitleEnhancer:
         except Exception as e:
             logger.error(f"Error adding title to context: {e}")
     
-    def get_title_context_summary(self, domain: str = "general") -> str:
+    def get_title_context_summary(self, domain: str = "general", user_id: str = None) -> str:
         """Get a summary of recent title enhancements for context from database"""
         try:
-            return db_manager.get_title_context_summary(domain=domain, limit=3)
+            return db_manager.get_title_context_summary(user_id=user_id, domain=domain, limit=3)
         except Exception as e:
             logger.error(f"Error getting title context summary: {e}")
             return "No previous title enhancements."
     
     def enhance_title(self, original_title: str, context_type: str = "general", 
                      domain: str = "general", max_length: int = 50, 
-                     style_preference: str = "professional") -> Dict:
+                     style_preference: str = "professional", user_id: str = None) -> Dict:
         """Create enhanced title suggestions with context awareness"""
         
         # Validate context type
@@ -979,7 +1039,7 @@ class TitleEnhancer:
             style_preference = "professional"
         
         # Build context-aware prompt
-        context_summary = self.get_title_context_summary(domain)
+        context_summary = self.get_title_context_summary(domain, user_id)
         
         prompt = f"""
         Create THREE UNIQUE and DISTINCTLY DIFFERENT enhanced title suggestions for the given original title.
@@ -1349,10 +1409,11 @@ class MessageBodyEnhancer:
     
     def add_message_to_context(self, original_message: str, enhanced_messages: List[str], 
                              context_type: str = "message_enhancement", 
-                             domain: str = "general"):
+                             domain: str = "general", user_id: str = None):
         """Add enhanced messages to database context for better continuity"""
         try:
             success = db_manager.add_message_context(
+                user_id=user_id,
                 original_message=original_message,
                 enhanced_messages=enhanced_messages,
                 context_type=context_type,
@@ -1365,10 +1426,10 @@ class MessageBodyEnhancer:
         except Exception as e:
             logger.error(f"Error adding message to context: {e}")
     
-    def get_message_context_summary(self, domain: str = "general") -> str:
+    def get_message_context_summary(self, domain: str = "general", user_id: str = None) -> str:
         """Get a summary of recent message enhancements for context from database"""
         try:
-            return db_manager.get_message_context_summary(domain=domain, limit=3)
+            return db_manager.get_message_context_summary(user_id=user_id, domain=domain, limit=3)
         except Exception as e:
             logger.error(f"Error getting message context summary: {e}")
             return "No previous message enhancements."
@@ -1376,7 +1437,7 @@ class MessageBodyEnhancer:
     def enhance_message(self, original_message: str, context_type: str = "general", 
                        domain: str = "general", max_length: int = 500, 
                        style_preference: str = "professional", 
-                       tone: str = "professional") -> Dict:
+                       tone: str = "professional", user_id: str = None) -> Dict:
         """Create enhanced message suggestions with context awareness"""
         
         # Validate context type
@@ -1404,7 +1465,7 @@ class MessageBodyEnhancer:
             tone = "professional"
         
         # Build context-aware prompt
-        context_summary = self.get_message_context_summary(domain)
+        context_summary = self.get_message_context_summary(domain, user_id)
         
         prompt = f"""
         Create THREE UNIQUE and DISTINCTLY DIFFERENT enhanced message suggestions for the given original message.
@@ -1568,12 +1629,14 @@ class MessageBodyEnhancer:
                 original_message=original_message,
                 enhanced_messages=enhanced_message_list,
                 context_type=context_type,
-                domain=domain
+                domain=domain,
+                user_id=user_id
             )
             
             # Track token usage
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(user_id, tokens_used, estimated_cost, "message_enhancement")
             
             return enhanced_messages
             
@@ -1585,11 +1648,11 @@ class MessageBodyEnhancer:
                            domain: str = "general", max_length: int = 500, 
                            style_preference: str = "professional", 
                            tone: str = "professional",
-                           exclude_previous: bool = True) -> Dict:
+                           exclude_previous: bool = True, user_id: str = None) -> Dict:
         """Regenerate message suggestions with context awareness to avoid repetition"""
         
         # Get context to understand what was previously generated
-        context_summary = self.get_message_context_summary(domain)
+        context_summary = self.get_message_context_summary(domain, user_id)
         
         prompt = f"""
         Create THREE NEW and DIFFERENT enhanced message suggestions for the given original message.
@@ -1740,12 +1803,14 @@ class MessageBodyEnhancer:
                 original_message=original_message,
                 enhanced_messages=enhanced_message_list,
                 context_type=context_type,
-                domain=domain
+                domain=domain,
+                user_id=user_id
             )
             
             # Track token usage
             tokens_used = response.usage.total_tokens
-            token_tracker.add_tokens(tokens_used)
+            estimated_cost = (tokens_used / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
+            track_llm_text_usage(user_id, tokens_used, estimated_cost, "message_regeneration")
             
             return enhanced_messages
             
@@ -1832,10 +1897,11 @@ class SchoolCompliantMessageEnhancer:
     
     def add_school_message_to_context(self, original_message: str, enhanced_messages: List[str], 
                                     context_type: str = "school_message_enhancement", 
-                                    domain: str = "school"):
+                                    domain: str = "school", user_id: str = None):
         """Add enhanced school messages to database context for better continuity"""
         try:
             success = db_manager.add_message_context(
+                user_id=user_id,
                 original_message=original_message,
                 enhanced_messages=enhanced_messages,
                 context_type=context_type,
@@ -1848,10 +1914,10 @@ class SchoolCompliantMessageEnhancer:
         except Exception as e:
             logger.error(f"Error adding school message to context: {e}")
     
-    def get_school_message_context_summary(self, domain: str = "school") -> str:
+    def get_school_message_context_summary(self, domain: str = "school", user_id: str = None) -> str:
         """Get a summary of recent school message enhancements for context from database"""
         try:
-            return db_manager.get_message_context_summary(domain=domain, limit=3)
+            return db_manager.get_message_context_summary(user_id=user_id, domain=domain, limit=3)
         except Exception as e:
             logger.error(f"Error getting school message context summary: {e}")
             return "No previous school message enhancements."
@@ -1859,7 +1925,7 @@ class SchoolCompliantMessageEnhancer:
     def enhance_school_message(self, original_message: str, context_type: str = "school", 
                              domain: str = "school", max_length: int = 500, 
                              style_preference: str = "professional", 
-                             tone: str = "professional") -> Dict:
+                             tone: str = "professional", user_id: str = None) -> Dict:
         """Create enhanced school-compliant message suggestions with strict guardrails"""
         
         # Validate context type for school environment
@@ -1887,7 +1953,7 @@ class SchoolCompliantMessageEnhancer:
             tone = "professional"
         
         # Build context-aware prompt with strict school guardrails
-        context_summary = self.get_school_message_context_summary(domain)
+        context_summary = self.get_school_message_context_summary(domain, user_id)
         
         # Use the guardrails prompt template
         prompt = GUARDRAILS_PROMPT_TEMPLATE.format(
@@ -1958,7 +2024,7 @@ class SchoolCompliantMessageEnhancer:
                                  domain: str = "school", max_length: int = 500, 
                                  style_preference: str = "professional", 
                                  tone: str = "professional",
-                                 exclude_previous: bool = True) -> Dict:
+                                 exclude_previous: bool = True, user_id: str = None) -> Dict:
         """Regenerate school-compliant message suggestions with context awareness and strict guardrails"""
         
         # Validate context type for school environment
@@ -1986,7 +2052,7 @@ class SchoolCompliantMessageEnhancer:
             tone = "professional"
         
         # Build context-aware prompt with strict school guardrails
-        context_summary = self.get_school_message_context_summary(domain)
+        context_summary = self.get_school_message_context_summary(domain, user_id)
         
         exclude_instruction = ""
         if exclude_previous:
@@ -2599,6 +2665,7 @@ def create_complete_curriculum_package():
 
 
 @app.route('/api/announcement/suggestions', methods=['POST'])
+@token_required
 def get_announcement_suggestions():
     """Get suggestions for announcement structure and content"""
     try:
@@ -2818,6 +2885,7 @@ def delete_announcement(announcement_id: int):
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/announcement/create', methods=['POST'])
+@token_required
 def create_enhanced_announcement():
     """Create an enhanced announcement with improved title and professional message body"""
     try:
@@ -2836,6 +2904,9 @@ def create_enhanced_announcement():
                 "error": "Missing required parameters. Please provide: title and message_body"
             }), 400
         
+        # Get current user ID from JWT token
+        user_id = get_current_user_id()
+        
         # Check token limit for complete package
         estimated_tokens = 1200  # Rough estimate for complete package
         if not token_tracker.check_token_limit(estimated_tokens):
@@ -2847,7 +2918,7 @@ def create_enhanced_announcement():
         # Generate enhanced announcement
         enhanced_announcement = announcement_generator.create_enhanced_announcement(
             title, message_body, announcement_type, target_audience, tone, 
-            max_title_length, max_message_length
+            max_title_length, max_message_length, user_id=user_id
         )
         
         # Get suggestions if requested
@@ -2952,6 +3023,7 @@ def predict_anomaly():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/title/enhance', methods=['POST'])
+@token_required
 def enhance_title():
     """Enhance a title with 3 unique suggestions"""
     try:
@@ -2982,19 +3054,23 @@ def enhance_title():
                 "usage": token_tracker.get_daily_usage()
             }), 429
         
+        # Get current user ID from JWT token
+        current_user_id = get_current_user_id()
+        
         enhanced_titles = title_enhancer.enhance_title(
             original_title=original_title,
             context_type=context_type,
             domain=domain,
             max_length=max_length,
-            style_preference=style_preference
+            style_preference=style_preference,
+            user_id=current_user_id
         )
         
         # Track LLM usage for title enhancement
         # Estimate tokens used (rough calculation based on input + output)
         estimated_tokens = len(original_title) + sum(len(title["title"]) for title in enhanced_titles["enhanced_titles"]) + 200  # Add buffer for prompt
         estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-        track_llm_text_usage(estimated_tokens, estimated_cost, "title_enhancement")
+        track_llm_text_usage(current_user_id, estimated_tokens, estimated_cost, "title_enhancement")
         
         # Extract just the titles as a simple array
         title_array = [title["title"] for title in enhanced_titles["enhanced_titles"]]
@@ -3014,6 +3090,7 @@ def enhance_title():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/title/regenerate', methods=['POST'])
+@token_required
 def regenerate_titles():
     """Regenerate title suggestions with context awareness"""
     try:
@@ -3273,6 +3350,7 @@ def delete_title_enhancement(enhancement_id: int):
 # Message Body Enhancement API Routes
 
 @app.route('/api/message/enhance', methods=['POST'])
+@token_required
 def enhance_message():
     """Enhance a message with 3 unique suggestions"""
     try:
@@ -3304,20 +3382,17 @@ def enhance_message():
                 "usage": token_tracker.get_daily_usage()
             }), 429
         
+        user_id = get_current_user_id()
+        
         enhanced_messages = message_body_enhancer.enhance_message(
             original_message=original_message,
             context_type=context_type,
             domain=domain,
             max_length=max_length,
             style_preference=style_preference,
-            tone=tone
+            tone=tone,
+            user_id=user_id
         )
-        
-        # Track LLM usage for message enhancement
-        # Estimate tokens used (rough calculation based on input + output)
-        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 300  # Add buffer for prompt
-        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-        track_llm_text_usage(estimated_tokens, estimated_cost, "message_enhancement")
         
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
@@ -3337,6 +3412,7 @@ def enhance_message():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/message/regenerate', methods=['POST'])
+@token_required
 def regenerate_messages():
     """Regenerate message suggestions with context awareness"""
     try:
@@ -3369,6 +3445,8 @@ def regenerate_messages():
                 "usage": token_tracker.get_daily_usage()
             }), 429
         
+        user_id = get_current_user_id()
+        
         enhanced_messages = message_body_enhancer.regenerate_messages(
             original_message=original_message,
             context_type=context_type,
@@ -3376,14 +3454,9 @@ def regenerate_messages():
             max_length=max_length,
             style_preference=style_preference,
             tone=tone,
-            exclude_previous=exclude_previous
+            exclude_previous=exclude_previous,
+            user_id=user_id
         )
-        
-        # Track LLM usage for message regeneration
-        # Estimate tokens used (rough calculation based on input + output)
-        estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 350  # Add buffer for regeneration prompt
-        estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-        track_llm_text_usage(estimated_tokens, estimated_cost, "message_regeneration")
         
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
@@ -3598,6 +3671,7 @@ def delete_message_enhancement(enhancement_id: int):
 # School-Compliant Message Enhancement API Routes
 
 @app.route('/api/enhance-withGuardrails', methods=['POST'])
+@token_required
 def enhance_school_message():
     """Enhance a message with 3 unique suggestions following strict school guardrails"""
     try:
@@ -3635,14 +3709,15 @@ def enhance_school_message():
             domain=domain,
             max_length=max_length,
             style_preference=style_preference,
-            tone=tone
+            tone=tone,
+            user_id=get_current_user_id()
         )
         
         # Track LLM usage for school message enhancement
         # Estimate tokens used (rough calculation based on input + output)
         estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 400  # Add buffer for school guardrails
         estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-        track_llm_text_usage(estimated_tokens, estimated_cost, "school_message_enhancement")
+        track_llm_text_usage(get_current_user_id(), estimated_tokens, estimated_cost, "school_message_enhancement")
         
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
@@ -3667,7 +3742,8 @@ def enhance_school_message():
         logger.error(f"Error in enhance_school_message: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/school/message/regenerate', methods=['POST'])
+@app.route('/api/enhance-withGuardrails/regenerate', methods=['POST'])
+@token_required
 def regenerate_school_messages():
     """Regenerate school-compliant message suggestions with context awareness and strict guardrails"""
     try:
@@ -3707,14 +3783,15 @@ def regenerate_school_messages():
             max_length=max_length,
             style_preference=style_preference,
             tone=tone,
-            exclude_previous=exclude_previous
+            exclude_previous=exclude_previous,
+            user_id=get_current_user_id()
         )
         
         # Track LLM usage for school message regeneration
         # Estimate tokens used (rough calculation based on input + output)
         estimated_tokens = len(original_message) + sum(len(msg["message"]) for msg in enhanced_messages["enhanced_messages"]) + 450  # Add buffer for school guardrails
         estimated_cost = (estimated_tokens / 1000) * 0.002  # Rough estimate: $0.002 per 1K tokens
-        track_llm_text_usage(estimated_tokens, estimated_cost, "school_message_regeneration")
+        track_llm_text_usage(get_current_user_id(), estimated_tokens, estimated_cost, "school_message_regeneration")
         
         # Extract just the messages as a simple array
         message_array = [msg["message"] for msg in enhanced_messages["enhanced_messages"]]
@@ -3743,10 +3820,10 @@ def regenerate_school_messages():
 # Database-based LLM Usage Tracking
 # Using database_manager.py for all LLM usage tracking operations
 
-def track_llm_text_usage(tokens_used: int, cost_usd: float, request_type: str = "text_generation"):
+def track_llm_text_usage(user_id: str, tokens_used: int, cost_usd: float, request_type: str = "text_generation"):
     """Track text generation usage in database"""
     try:
-        success = db_manager.add_llm_text_usage(tokens_used, cost_usd, request_type)
+        success = db_manager.add_llm_text_usage(user_id, tokens_used, cost_usd, request_type)
         if success:
             logger.info(f"LLM text usage tracked: {tokens_used} tokens, ${cost_usd:.4f}")
         else:

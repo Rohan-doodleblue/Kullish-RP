@@ -19,11 +19,6 @@
       "description": "Development server"
     }
   ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
   "components": {
     "securitySchemes": {
       "bearerAuth": {
@@ -80,9 +75,6 @@
           "error": {
             "type": "string",
             "description": "Error message"
-          },
-          "usage": {
-            "$ref": "#/components/schemas/TokenUsageResponse"
           }
         }
       },
@@ -387,12 +379,70 @@
               "image_requests": {"type": "integer"},
               "tokens_used": {"type": "integer"},
               "cost_usd": {"type": "number"}
-              }
-            }
           }
         }
       }
     },
+      "SpeechSessionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "session_id": {
+            "type": "string",
+            "description": "Unique session identifier"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          }
+        }
+      },
+      "SpeechStatusResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "session": {
+            "type": "object",
+            "properties": {
+              "session_id": {"type": "string"},
+              "user_id": {"type": "string"},
+              "status": {"type": "string"},
+              "progress": {"type": "integer"},
+              "original_transcript": {"type": "string"},
+              "enhanced_text": {"type": "string"},
+              "created_at": {"type": "string"},
+              "timestamp": {"type": "string"}
+              }
+            }
+          }
+        },
+      "SpeechSessionsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "session_id": {"type": "string"},
+                "user_id": {"type": "string"},
+                "status": {"type": "string"},
+                "progress": {"type": "integer"},
+                "created_at": {"type": "string"}
+              }
+            }
+                  }
+                }
+              }
+            }
+          },
   "paths": {
     "/health": {
       "get": {
@@ -1136,6 +1186,300 @@
           }
         }
       }
+    },
+    "/api/speech/start-session": {
+      "post": {
+        "summary": "Start Speech Processing Session",
+        "description": "Create a new speech-to-text processing session with WebSocket support",
+        "tags": ["Speech-to-Text"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechSessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/speech/upload-audio": {
+      "post": {
+        "summary": "Upload Audio for Speech Processing",
+        "description": "Upload audio file for speech-to-text processing with real-time WebSocket updates",
+        "tags": ["Speech-to-Text"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string",
+                    "description": "Session ID from start-session"
+                  },
+                  "audio": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Audio file (WAV or MP3)"
+                  }
+                },
+                "required": ["session_id", "audio"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid session or audio file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+    "/api/speech/status/{session_id}": {
+      "get": {
+        "summary": "Get Speech Processing Status",
+        "description": "Get the current status of a speech processing session",
+        "tags": ["Speech-to-Text"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "description": "Session ID",
+            "schema": {
+            "type": "string"
+          }
+        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/speech/sessions": {
+      "get": {
+        "summary": "Get User Speech Sessions",
+        "description": "Get all speech processing sessions for the current user",
+        "tags": ["Speech-to-Text"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User sessions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechSessionsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/speech/cancel/{session_id}": {
+      "post": {
+        "summary": "Cancel Speech Processing Session",
+        "description": "Cancel an active speech processing session",
+        "tags": ["Speech-to-Text"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "description": "Session ID to cancel",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeechSessionResponse"
+                    }
+                  }
+                }
+              },
+          "401": {
+            "description": "Unauthorized - JWT token required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -1158,6 +1502,10 @@
     {
       "name": "LLM Usage Tracking",
       "description": "Endpoints for tracking and analyzing LLM usage statistics, costs, and trends"
+    },
+    {
+      "name": "Speech-to-Text",
+      "description": "Endpoints for speech-to-text processing with real-time WebSocket updates and AI enhancement"
     }
   ]
 } 

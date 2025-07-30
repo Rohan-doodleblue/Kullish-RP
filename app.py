@@ -15,6 +15,11 @@ import numpy as np
 import threading
 import jwt
 from functools import wraps
+from flask_socketio import SocketIO, emit, join_room, leave_room
+import uuid
+import tempfile
+import wave
+import base64
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,6 +29,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Initialize CORS
+CORS(app, origins=["*"])
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Store active speech processing sessions
+active_sessions = {}
+
 # JWT Configuration - Frontend team handles token validation
 # We only extract user info from the token
 CORS(app)  # Enable CORS for frontend integration
@@ -4009,5 +4024,537 @@ def get_llm_usage_insights():
         logger.error(f"Error getting LLM usage insights: {e}")
         return jsonify({"error": str(e)}), 500
 
+# Speech Processing Functions
+def process_speech_audio(audio_data: bytes, session_id: str, user_id: str):
+    """Process speech audio using OpenAI Whisper and enhance the transcript"""
+    try:
+        # Update session status
+        active_sessions[session_id]['status'] = 'processing'
+        active_sessions[session_id]['progress'] = 10
+        socketio.emit('speech_status', {
+            'session_id': session_id,
+            'status': 'processing',
+            'progress': 10,
+            'message': 'Processing audio with Whisper...'
+        }, room=session_id)
+        
+        # Save audio to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+            temp_file.write(audio_data)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Transcribe audio using OpenAI Whisper
+            with open(temp_file_path, 'rb') as audio_file:
+                transcript_response = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file,
+                    response_format="text"
+                )
+            
+            transcript = transcript_response.strip()
+            
+            # Update progress
+            active_sessions[session_id]['progress'] = 50
+            socketio.emit('speech_status', {
+                'session_id': session_id,
+                'status': 'processing',
+                'progress': 50,
+                'message': 'Transcription completed. Enhancing text...'
+            }, room=session_id)
+            
+            # Enhance the transcript using GPT
+            enhanced_text = enhance_transcript(transcript, user_id)
+            
+            # Update progress
+            active_sessions[session_id]['progress'] = 90
+            socketio.emit('speech_status', {
+                'session_id': session_id,
+                'status': 'processing',
+                'progress': 90,
+                'message': 'Finalizing enhanced text...'
+            }, room=session_id)
+            
+            # Prepare final result
+            result = {
+                'session_id': session_id,
+                'original_transcript': transcript,
+                'enhanced_text': enhanced_text,
+                'status': 'completed',
+                'progress': 100,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # Update session
+            active_sessions[session_id].update(result)
+            
+            # Emit final result
+            socketio.emit('speech_result', result, room=session_id)
+            
+            # Track LLM usage
+            estimated_tokens = len(transcript) + len(enhanced_text) + 200  # Rough estimate
+            estimated_cost = (estimated_tokens / 1000) * 0.002
+            track_llm_text_usage(user_id, estimated_tokens, estimated_cost, "speech_to_text")
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+                
+    except Exception as e:
+        logger.error(f"Error processing speech for session {session_id}: {e}")
+        error_result = {
+            'session_id': session_id,
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+        active_sessions[session_id].update(error_result)
+        socketio.emit('speech_error', error_result, room=session_id)
+
+def process_realtime_audio_chunk(audio_chunk: bytes, session_id: str, user_id: str, is_final: bool = False):
+    """Process real-time audio chunk and return partial transcript"""
+    try:
+        if session_id not in active_sessions:
+            return None
+            
+        # Initialize audio buffer if not exists
+        if 'audio_buffer' not in active_sessions[session_id]:
+            active_sessions[session_id]['audio_buffer'] = b''
+            active_sessions[session_id]['chunk_count'] = 0
+            
+        # Add chunk to buffer
+        active_sessions[session_id]['audio_buffer'] += audio_chunk
+        active_sessions[session_id]['chunk_count'] += 1
+        
+        # Process every 5 chunks or if it's the final chunk
+        should_process = (active_sessions[session_id]['chunk_count'] % 5 == 0) or is_final
+        
+        if should_process and active_sessions[session_id]['audio_buffer']:
+            # Save current buffer to temporary file
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file.write(active_sessions[session_id]['audio_buffer'])
+                temp_file_path = temp_file.name
+            
+            try:
+                # Transcribe current buffer
+                with open(temp_file_path, 'rb') as audio_file:
+                    transcript_response = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        response_format="text"
+                    )
+                
+                partial_transcript = transcript_response.strip()
+                
+                # Emit partial transcript
+                partial_result = {
+                    'session_id': session_id,
+                    'partial_transcript': partial_transcript,
+                    'is_final': is_final,
+                    'timestamp': datetime.now().isoformat()
+                }
+                
+                socketio.emit('speech_partial', partial_result, room=session_id)
+                
+                # If this is the final chunk, enhance the complete transcript
+                if is_final and partial_transcript:
+                    enhanced_text = enhance_transcript(partial_transcript, user_id)
+                    
+                    final_result = {
+                        'session_id': session_id,
+                        'original_transcript': partial_transcript,
+                        'enhanced_text': enhanced_text,
+                        'status': 'completed',
+                        'progress': 100,
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    
+                    # Update session
+                    active_sessions[session_id].update(final_result)
+                    
+                    # Emit final result
+                    socketio.emit('speech_result', final_result, room=session_id)
+                    
+                    # Track LLM usage
+                    estimated_tokens = len(partial_transcript) + len(enhanced_text) + 200
+                    estimated_cost = (estimated_tokens / 1000) * 0.002
+                    track_llm_text_usage(user_id, estimated_tokens, estimated_cost, "realtime_speech_to_text")
+                    
+                    # Clear buffer
+                    active_sessions[session_id]['audio_buffer'] = b''
+                    active_sessions[session_id]['chunk_count'] = 0
+                
+            finally:
+                # Clean up temporary file
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+                    
+    except Exception as e:
+        logger.error(f"Error processing real-time audio chunk for session {session_id}: {e}")
+        error_result = {
+            'session_id': session_id,
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+        socketio.emit('speech_error', error_result, room=session_id)
+
+def enhance_transcript(transcript: str, user_id: str) -> str:
+    """Enhance the transcribed text using GPT"""
+    prompt = f"""
+    Please enhance the following transcribed speech to make it more professional, clear, and well-structured.
+    Maintain the original meaning while improving grammar, punctuation, and flow.
+    
+    Original transcript: "{transcript}"
+    
+    Requirements:
+    1. Fix any grammar or punctuation errors
+    2. Improve sentence structure and flow
+    3. Make it more professional and clear
+    4. Maintain the original meaning and intent
+    5. Keep the same length or slightly expand if needed for clarity
+    
+    Return only the enhanced text without any additional formatting or explanations.
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model=Config.MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=Config.MAX_TOKENS_PER_REQUEST,
+            temperature=0.3
+        )
+        
+        enhanced_text = response.choices[0].message.content.strip()
+        return enhanced_text
+        
+    except Exception as e:
+        logger.error(f"Error enhancing transcript: {e}")
+        return transcript  # Return original if enhancement fails
+
+# WebSocket Event Handlers
+@socketio.on('connect')
+def handle_connect():
+    """Handle WebSocket connection"""
+    logger.info(f"Client connected: {request.sid}")
+    emit('connected', {'message': 'Connected to speech processing service'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle WebSocket disconnection"""
+    logger.info(f"Client disconnected: {request.sid}")
+    # Clean up any active sessions for this client
+    sessions_to_remove = []
+    for session_id, session_data in active_sessions.items():
+        if session_data.get('client_id') == request.sid:
+            sessions_to_remove.append(session_id)
+    
+    for session_id in sessions_to_remove:
+        del active_sessions[session_id]
+
+@socketio.on('join_session')
+def handle_join_session(data):
+    """Join a speech processing session"""
+    session_id = data.get('session_id')
+    if session_id and session_id in active_sessions:
+        join_room(session_id)
+        active_sessions[session_id]['client_id'] = request.sid
+        emit('joined_session', {
+            'session_id': session_id,
+            'status': active_sessions[session_id].get('status', 'pending')
+        })
+    else:
+        emit('error', {'message': 'Invalid session ID'})
+
+@socketio.on('leave_session')
+def handle_leave_session(data):
+    """Leave a speech processing session"""
+    session_id = data.get('session_id')
+    if session_id:
+        leave_room(session_id)
+        emit('left_session', {'session_id': session_id})
+
+@socketio.on('start_realtime_recording')
+def handle_start_realtime_recording(data):
+    """Start real-time speech recording session"""
+    try:
+        session_id = data.get('session_id')
+        user_id = data.get('user_id')
+        
+        if not session_id or session_id not in active_sessions:
+            emit('error', {'message': 'Invalid session ID'})
+            return
+        
+        # Initialize real-time recording session
+        active_sessions[session_id]['status'] = 'recording'
+        active_sessions[session_id]['audio_buffer'] = b''
+        active_sessions[session_id]['chunk_count'] = 0
+        active_sessions[session_id]['started_at'] = datetime.now().isoformat()
+        
+        emit('realtime_recording_started', {
+            'session_id': session_id,
+            'status': 'recording',
+            'message': 'Real-time recording started'
+        })
+        
+        logger.info(f"Real-time recording started for session {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error starting real-time recording: {e}")
+        emit('error', {'message': str(e)})
+
+@socketio.on('audio_chunk')
+def handle_audio_chunk(data):
+    """Handle incoming audio chunk for real-time processing"""
+    try:
+        session_id = data.get('session_id')
+        user_id = data.get('user_id')
+        audio_chunk_base64 = data.get('audio_chunk')
+        is_final = data.get('is_final', False)
+        
+        if not session_id or session_id not in active_sessions:
+            emit('error', {'message': 'Invalid session ID'})
+            return
+        
+        if not audio_chunk_base64:
+            emit('error', {'message': 'No audio chunk provided'})
+            return
+        
+        # Decode base64 audio chunk
+        try:
+            audio_chunk = base64.b64decode(audio_chunk_base64)
+        except Exception as e:
+            emit('error', {'message': 'Invalid audio chunk format'})
+            return
+        
+        # Process the audio chunk
+        process_realtime_audio_chunk(audio_chunk, session_id, user_id, is_final)
+        
+        # Acknowledge receipt
+        emit('audio_chunk_received', {
+            'session_id': session_id,
+            'chunk_processed': True,
+            'is_final': is_final
+        })
+        
+    except Exception as e:
+        logger.error(f"Error processing audio chunk: {e}")
+        emit('error', {'message': str(e)})
+
+@socketio.on('stop_realtime_recording')
+def handle_stop_realtime_recording(data):
+    """Stop real-time speech recording session"""
+    try:
+        session_id = data.get('session_id')
+        user_id = data.get('user_id')
+        
+        if not session_id or session_id not in active_sessions:
+            emit('error', {'message': 'Invalid session ID'})
+            return
+        
+        # Update session status
+        active_sessions[session_id]['status'] = 'processing'
+        active_sessions[session_id]['stopped_at'] = datetime.now().isoformat()
+        
+        emit('realtime_recording_stopped', {
+            'session_id': session_id,
+            'status': 'processing',
+            'message': 'Real-time recording stopped. Processing final transcript...'
+        })
+        
+        logger.info(f"Real-time recording stopped for session {session_id}")
+        
+    except Exception as e:
+        logger.error(f"Error stopping real-time recording: {e}")
+        emit('error', {'message': str(e)})
+
+# Speech-to-Text API Endpoints
+@app.route('/api/speech/start-session', methods=['POST'])
+@token_required
+def start_speech_session():
+    """Start a new speech processing session"""
+    try:
+        user_id = get_current_user_id()
+        session_id = str(uuid.uuid4())
+        
+        # Create new session
+        active_sessions[session_id] = {
+            'session_id': session_id,
+            'user_id': user_id,
+            'status': 'pending',
+            'progress': 0,
+            'created_at': datetime.now().isoformat(),
+            'client_id': None
+        }
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'message': 'Speech processing session created successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting speech session: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speech/upload-audio', methods=['POST'])
+@token_required
+def upload_speech_audio():
+    """Upload audio for speech processing"""
+    try:
+        user_id = get_current_user_id()
+        session_id = request.form.get('session_id')
+        
+        if not session_id or session_id not in active_sessions:
+            return jsonify({'error': 'Invalid session ID'}), 400
+        
+        if active_sessions[session_id]['user_id'] != user_id:
+            return jsonify({'error': 'Unauthorized access to session'}), 403
+        
+        # Check if audio file is present
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+        
+        audio_file = request.files['audio']
+        if audio_file.filename == '':
+            return jsonify({'error': 'No audio file selected'}), 400
+        
+        # Read audio data
+        audio_data = audio_file.read()
+        
+        # Validate audio format (basic check)
+        if not audio_data.startswith(b'RIFF') and not audio_data.startswith(b'\xff\xfb'):
+            return jsonify({'error': 'Invalid audio format. Please provide WAV or MP3 file'}), 400
+        
+        # Update session status
+        active_sessions[session_id]['status'] = 'uploaded'
+        active_sessions[session_id]['progress'] = 5
+        
+        # Start processing in background thread
+        processing_thread = threading.Thread(
+            target=process_speech_audio,
+            args=(audio_data, session_id, user_id)
+        )
+        processing_thread.daemon = True
+        processing_thread.start()
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'message': 'Audio uploaded successfully. Processing started.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error uploading audio: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speech/status/<session_id>', methods=['GET'])
+@token_required
+def get_speech_status(session_id):
+    """Get the status of a speech processing session"""
+    try:
+        user_id = get_current_user_id()
+        
+        if session_id not in active_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        if active_sessions[session_id]['user_id'] != user_id:
+            return jsonify({'error': 'Unauthorized access to session'}), 403
+        
+        session_data = active_sessions[session_id].copy()
+        # Remove sensitive data
+        session_data.pop('client_id', None)
+        
+        return jsonify({
+            'success': True,
+            'session': session_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting speech status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speech/sessions', methods=['GET'])
+@token_required
+def get_user_sessions():
+    """Get all speech processing sessions for the current user"""
+    try:
+        user_id = get_current_user_id()
+        
+        user_sessions = []
+        for session_id, session_data in active_sessions.items():
+            if session_data['user_id'] == user_id:
+                session_info = session_data.copy()
+                session_info.pop('client_id', None)
+                user_sessions.append(session_info)
+        
+        return jsonify({
+            'success': True,
+            'sessions': user_sessions
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting user sessions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/speech/cancel/<session_id>', methods=['POST'])
+@token_required
+def cancel_speech_session(session_id):
+    """Cancel a speech processing session"""
+    try:
+        user_id = get_current_user_id()
+        
+        if session_id not in active_sessions:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        if active_sessions[session_id]['user_id'] != user_id:
+            return jsonify({'error': 'Unauthorized access to session'}), 403
+        
+        # Update session status
+        active_sessions[session_id]['status'] = 'cancelled'
+        active_sessions[session_id]['cancelled_at'] = datetime.now().isoformat()
+        
+        # Emit cancellation event
+        socketio.emit('speech_cancelled', {
+            'session_id': session_id,
+            'message': 'Session cancelled by user'
+        }, room=session_id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Session cancelled successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error cancelling session: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Clean up old sessions periodically
+def cleanup_old_sessions():
+    """Clean up sessions older than 24 hours"""
+    while True:
+        try:
+            current_time = datetime.now()
+            sessions_to_remove = []
+            
+            for session_id, session_data in active_sessions.items():
+                created_at = datetime.fromisoformat(session_data['created_at'])
+                if (current_time - created_at).total_seconds() > 86400:  # 24 hours
+                    sessions_to_remove.append(session_id)
+            
+            for session_id in sessions_to_remove:
+                del active_sessions[session_id]
+                logger.info(f"Cleaned up old session: {session_id}")
+                
+        except Exception as e:
+            logger.error(f"Error in cleanup: {e}")
+        
+        time.sleep(3600)  # Run every hour
+
+# Start cleanup thread
+cleanup_thread = threading.Thread(target=cleanup_old_sessions, daemon=True)
+cleanup_thread.start()
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
